@@ -1,10 +1,10 @@
-# Docker Setup for PP2024Fall
+Parallel Programming 2024Fall
 
 ## Overview
-This repository contains the setup for the **PP2024Fall** Docker environment. It includes the necessary steps to build and run the Docker container for your project.
+This repo includes the content of my dedication to the course and the necessary steps to build and run the Docker container for your project.
 
 ## Build the Docker Image
-To build the Docker image, use the following command:
+To build the Docker image:
 ```bash
 docker build -t pp2024fall .
 ```
