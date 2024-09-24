@@ -12,7 +12,6 @@ RUN apt-get update && apt-get install -y \
     ssh \
     vim \
     wget \
-    curl \
     libopenmpi-dev \
     openmpi-bin \
     libomp-dev \
