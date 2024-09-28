@@ -37,21 +37,61 @@ void absVector(float *values, float *output, int N)
 
     // Write results back to memory
     _pp_vstore_float(output + i, result, maskAll);
-  }
+  }             
 }
 
 void clampedExpVector(float *values, int *exponents, float *output, int N)
 {
-  //
-  // PP STUDENTS TODO: Implement your vectorized version of
-  // clampedExpSerial() here.
-  //
-  // Your solution should work for any value of
-  // N and VECTOR_WIDTH, not just when VECTOR_WIDTH divides N
-  //
-  for (int i = 0; i < N; i += VECTOR_WIDTH)
-  {
-  }
+  	//
+  	// PP STUDENTS TODO: Implement your vectorized version of
+  	// clampedExpSerial() here.
+  	//
+  	// Your solution should work for any value of
+  	// N and VECTOR_WIDTH, not just when VECTOR_WIDTH divides N
+  	//
+	__pp_vec_float x; 
+    __pp_vec_int ex;
+	__pp_vec_float result;
+
+
+    __pp_vec_int zerosInt = _pp_vset_int(0);
+    __pp_vec_int onesInt  = _pp_vset_int(1);
+
+    __pp_vec_float ninesFloat = _pp_vset_float(9.999999f);
+
+    for (int i = 0; i < N; i += VECTOR_WIDTH) {
+        int width = i + VECTOR_WIDTH <= N ? VECTOR_WIDTH : N - i; 
+
+        __pp_mask maskAll  = _pp_init_ones(width);
+
+    	_pp_vload_float(x, values + i, maskAll);
+        _pp_vload_int(ex, exponents + i, maskAll);
+		
+        __pp_mask zeroIndexEx;
+        __pp_mask done = _pp_init_ones(0);
+
+        _pp_veq_int(zeroIndexEx, ex, zerosInt, maskAll);
+        _pp_vset_float(result, 1.f, zeroIndexEx);
+        __pp_mask copyResult = _pp_mask_not(zeroIndexEx);
+
+        int countDone = _pp_cntbits(zeroIndexEx);
+
+        while (countDone < VECTOR_WIDTH) {
+            __pp_mask doCalculation = _pp_mask_not(zeroIndexEx);
+            _pp_vmult_float(x, x, x, doCalculation);
+            _pp_vsub_int(ex, ex, onesInt, doCalculation);
+
+            _pp_veq_int(zeroIndexEx, ex, zerosInt, maskAll);
+            countDone = _pp_cntbits(zeroIndexEx);
+        }
+        
+        __pp_mask largerThanNines; 
+        _pp_vgt_float(largerThanNines, x, ninesFloat, maskAll);
+        _pp_vset_float(x, 9.999999f, largerThanNines);
+        _pp_vmove_float(result, x, copyResult);
+
+        _pp_vstore_float(output + i, result, maskAll);
+    }
 }
 
 // returns the sum of all elements in values
@@ -60,13 +100,14 @@ void clampedExpVector(float *values, int *exponents, float *output, int N)
 float arraySumVector(float *values, int N)
 {
 
-  //
-  // PP STUDENTS TODO: Implement your vectorized version of arraySumSerial here
-  //
+    //
+    // PP STUDENTS TODO: Implement your vectorized version of arraySumSerial here
+    //
 
-  for (int i = 0; i < N; i += VECTOR_WIDTH)
-  {
-  }
+    for (int i = 0; i < N; i += VECTOR_WIDTH)
+    {
+            
+    }
 
-  return 0.0;
+    return 0.0;
 }
