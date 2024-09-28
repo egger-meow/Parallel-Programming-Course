@@ -87,9 +87,8 @@ void clampedExpVector(float *values, int *exponents, float *output, int N)
             countDone = _pp_cntbits(zeroIndexEx);
         }
         
-        __pp_mask largerThanNines; 
+        __pp_mask largerThanNines = _pp_init_ones(0); 
         _pp_vgt_float(largerThanNines, result, ninesFloat, copyResult);
-        largerThanNines = _pp_mask_and(largerThanNines, copyResult);
         _pp_vset_float(result, 9.999999f, largerThanNines);
 
         _pp_vstore_float(output + i, result, maskAll);
