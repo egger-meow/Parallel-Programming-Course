@@ -64,7 +64,10 @@ void clampedExpVector(float *values, int *exponents, float *output, int N)
 
         __pp_mask maskAll  = _pp_init_ones(width);
 
+
+    	_pp_vload_float(result, values + i, maskAll);
     	_pp_vload_float(x, values + i, maskAll);
+
         _pp_vload_int(ex, exponents + i, maskAll);
 		
         __pp_mask zeroIndexEx;
@@ -78,7 +81,7 @@ void clampedExpVector(float *values, int *exponents, float *output, int N)
 
         while (countDone < VECTOR_WIDTH) {
             __pp_mask doCalculation = _pp_mask_not(zeroIndexEx);
-            _pp_vmult_float(x, x, x, doCalculation);
+            _pp_vmult_float(result, result, x, doCalculation);
             _pp_vsub_int(ex, ex, onesInt, doCalculation);
 
             _pp_veq_int(zeroIndexEx, ex, zerosInt, maskAll);
@@ -86,9 +89,8 @@ void clampedExpVector(float *values, int *exponents, float *output, int N)
         }
         
         __pp_mask largerThanNines; 
-        _pp_vgt_float(largerThanNines, x, ninesFloat, maskAll);
-        _pp_vset_float(x, 9.999999f, largerThanNines);
-        _pp_vmove_float(result, x, copyResult);
+        _pp_vgt_float(largerThanNines, result, ninesFloat, copyResult);
+        _pp_vset_float(result, 9.999999f, largerThanNines);
 
         _pp_vstore_float(output + i, result, maskAll);
     }
