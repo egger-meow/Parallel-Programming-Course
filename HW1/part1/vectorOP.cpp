@@ -89,7 +89,7 @@ void clampedExpVector(float *values, int *exponents, float *output, int N)
         
         __pp_mask largerThanNines; 
         _pp_vgt_float(largerThanNines, result, ninesFloat, copyResult);
-        largerThanNines = _pp_mask_and(largerThanNines, copyResult)
+        largerThanNines = _pp_mask_and(largerThanNines, copyResult);
         _pp_vset_float(result, 9.999999f, largerThanNines);
 
         _pp_vstore_float(output + i, result, maskAll);
