@@ -51,7 +51,7 @@ void clampedExpVector(float *values, int *exponents, float *output, int N)
   	//
 	__pp_vec_float x; 
     __pp_vec_int ex;
-	__pp_vec_float result = _pp_vset_float(1.0f);
+	__pp_vec_float result = _pp_vset_float(1);
 
 
     __pp_vec_int zerosInt = _pp_vset_int(0);
