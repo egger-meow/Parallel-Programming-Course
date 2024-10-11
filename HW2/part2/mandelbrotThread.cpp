@@ -44,7 +44,7 @@ static inline int mandel(float c_re, float c_im, int count)
 //   into the image viewport.
 // * width, height describe the size of the output image
 // * startRow, totalRows describe how much of the image to compute
-void mandelbrotSerial(
+void mandelbrotSerial2(
     float x0, float y0, float x1, float y1,
     int width, int height,
     int startRow, int totalRows,
@@ -87,7 +87,7 @@ void workerThreadStart(WorkerArgs *const args)
     int rowsPerThread = args -> height / args -> numThreads;
     int rowStart = args -> threadId * rowsPerThread;
     int rowEnd = args -> threadId == args -> numThreads - 1 ? args -> height : rowStart + rowsPerThread;
-    mandelbrotSerial(
+    mandelbrotSerial2(
         args -> x0, args -> y0, args -> x1, args ->  y1,
         args -> width, args -> height,
         rowStart, rowEnd - rowStart,
