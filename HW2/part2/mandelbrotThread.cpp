@@ -20,7 +20,7 @@ extern void mandelbrotSerial(
     int startRow, int numRows,
     int maxIterations,
     int output[]);
-    
+
 //
 // workerThreadStart --
 //
@@ -36,16 +36,14 @@ void workerThreadStart(WorkerArgs *const args)
     // Of course, you can copy mandelbrotSerial() to this file and
     // modify it to pursue a better performance.
 
-    int rowsPerThread = args -> height / args -> numThreads;
-    int rowStart = args -> threadId * rowsPerThread;
-    int rowEnd = args -> threadId == args -> numThreads - 1 ? args -> height : rowStart + rowsPerThread;
-    mandelbrotSerial(
-        args -> x0, args -> y0, args -> x1, args ->  y1,
-        args -> width, args -> height,
-        rowStart, rowEnd - rowStart,
-        args -> maxIterations,
-        args -> output
-    );
+int blockSize = 16;  // Divide the image into 16x16 pixel blocks
+int blocksPerThread = (width * height) / (blockSize * blockSize) / numThreads;
+
+for (int block = 0; block < blocksPerThread; block++) {
+    int startX = (block % (width / blockSize)) * blockSize;
+    int startY = (block / (width / blockSize)) * blockSize;
+    mandelbrotSerial(x0, y0, x1, y1, width, height, startY, blockSize, maxIterations, output);
+}
 
     // printf("Hello world from thread %d\n", args->threadId);
 }
