@@ -36,7 +36,18 @@ void workerThreadStart(WorkerArgs *const args)
     // Of course, you can copy mandelbrotSerial() to this file and
     // modify it to pursue a better performance.
 
-    printf("Hello world from thread %d\n", args->threadId);
+    int rowsPerThread = args -> height / args -> numThreads;
+    int rowStart = args -> threadId * rowsPerThread;
+    int rowEnd = args -> threadId == args -> numThreads - 1 ? args -> height : rowStart + rowsPerThread;
+    mandelbrotSerial(
+        args -> x0, args -> y0, args -> x1, args ->  y1,
+        args -> width, args -> height,
+        rowStart, rowEnd - rowStart,
+        args -> maxIterations,
+        args -> output
+    );
+
+    // printf("Hello world from thread %d\n", args->threadId);
 }
 
 //
@@ -83,7 +94,7 @@ void mandelbrotThread(
     // Spawn the worker threads.  Note that only numThreads-1 std::threads
     // are created and the main application thread is used as a worker
     // as well.
-    for (int i = 1; i < numThreads; i++)
+    for (int i = 1; i < numThreads; i++) 
     {
         workers[i] = std::thread(workerThreadStart, &args[i]);
     }
