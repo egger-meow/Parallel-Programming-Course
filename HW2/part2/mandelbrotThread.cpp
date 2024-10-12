@@ -124,18 +124,6 @@ void workerThreadStart(WorkerArgs *const args)
     //     args -> output
     // );
 
-int blockSize = 16;  // Divide the image into 16x16 pixel blocks
-int blocksPerThread = (args -> width * args -> height) / (blockSize * blockSize) / args -> numThreads;
-
-for (int block = 0; block < blocksPerThread; block++) {
-    int startX = (block % (args -> width / blockSize)) * blockSize;
-    int startY = (block / (args -> width / blockSize)) * blockSize;
-    mandelbrotSerial2(
-        x0, y0, x1, y1, 
-        width, height, startY, blockSize, maxIterations, output
-        );
-}
-
     // printf("Hello world from thread %d\n", args->threadId);
 }
 
