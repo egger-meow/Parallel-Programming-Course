@@ -54,16 +54,13 @@ static inline int mandel(float c_re, float c_im, int count)
 void mandelbrotSerial2(
     float x0, float y0, float x1, float y1,
     int width, int height,
-    int startRow, int totalRows,
-    int startRCol, int totalCols,
+    int startRow, int endRow,
+    int startRCol, int endCol,
     int maxIterations,
     int output[])
 {
   float dx = (x1 - x0) / width;
   float dy = (y1 - y0) / height;
-
-  int endRow = startRow + totalRows;
-  int endCol = startRCol + totalCols;
 
   for (int j = startRow; j < endRow; j++)
   {
@@ -107,8 +104,8 @@ void workerThreadStart(WorkerArgs *const args)
                 mandelbrotSerial2(
                     args -> x0, args -> y0, args -> x1, args ->  y1,
                     args -> width, args -> height,
-                    rowStart, rowEnd - rowStart,
-                    colStart, colEnd - colStart,
+                    rowStart, rowEnd,
+                    colStart, colEnd,
                     args -> maxIterations,
                     args -> output
                 );
