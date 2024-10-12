@@ -14,12 +14,69 @@ typedef struct
     int numThreads;
 } WorkerArgs;
 
-extern void mandelbrotSerial(
+// extern void mandelbrotSerial(
+//     float x0, float y0, float x1, float y1,
+//     int width, int height,
+//     int startRow, int numRows,
+//     int maxIterations,
+//     int output[]);
+
+static inline int mandel(float c_re, float c_im, int count)
+{
+  float z_re = c_re, z_im = c_im;
+  int i;
+  for (i = 0; i < count; ++i)
+  {
+
+    if (z_re * z_re + z_im * z_im > 4.f)
+      break;
+
+    float new_re = z_re * z_re - z_im * z_im;
+    float new_im = 2.f * z_re * z_im;
+    z_re = c_re + new_re;
+    z_im = c_im + new_im;
+  }
+
+  return i;
+}
+
+//
+// MandelbrotSerial --
+//
+// Compute an image visualizing the mandelbrot set.  The resulting
+// array contains the number of iterations required before the complex
+// number corresponding to a pixel could be rejected from the set.
+//
+// * x0, y0, x1, y1 describe the complex coordinates mapping
+//   into the image viewport.
+// * width, height describe the size of the output image
+// * startRow, totalRows describe how much of the image to compute
+void mandelbrotSerial2(
     float x0, float y0, float x1, float y1,
     int width, int height,
-    int startRow, int numRows,
+    int startRow, int totalRows,
+    int startRCol, int totalCols,
     int maxIterations,
-    int output[]);
+    int output[])
+{
+  float dx = (x1 - x0) / width;
+  float dy = (y1 - y0) / height;
+
+  int endRow = startRow + totalRows;
+  int endCol = startRCol + totalCols;
+
+  for (int j = startRow; j < endRow; j++)
+  {
+    for (int i = startRCol; i < endCol; ++i)
+    {
+      float x = x0 + i * dx;
+      float y = y0 + j * dy;
+
+      int index = (j * width + i);
+      output[index] = mandel(x, y, maxIterations);
+    }
+  }
+}
 
 //
 // workerThreadStart --
@@ -35,14 +92,48 @@ void workerThreadStart(WorkerArgs *const args)
     // half of the image and thread 1 could compute the bottom half.
     // Of course, you can copy mandelbrotSerial() to this file and
     // modify it to pursue a better performance.
+    int rowsPerThread = args -> height / args -> numThreads;
+    int colsPerThread = args -> width / (args -> numThreads + 1);
+    for (int i = 0; i < args -> numThreads; i++) {
+        for (int j = 0; j < args -> numThreads + 1; j++) {
+            int id = i * (args -> numThreads + 1) + j;
+            if ((id - args -> threadId) % args -> numThreads == 0) {
+                int rowStart = i * rowsPerThread;
+                int rowEnd = i == args -> numThreads - 1 ? args -> height : rowStart + rowsPerThread;
+                int colStart = j * colsPerThread;
+                int colEnd = j == args -> numThreads  ? args -> width : colStart + colsPerThread;
+                mandelbrotSerial2(
+                    args -> x0, args -> y0, args -> x1, args ->  y1,
+                    args -> width, args -> height,
+                    rowStart, rowEnd - rowStart,
+                    colStart, colEnd - colStart,
+                    args -> maxIterations,
+                    args -> output
+                );
+
+            } 
+        }
+    }
+    // int rowStart = args -> threadId * rowsPerThread;
+    // int rowEnd = args -> threadId == args -> numThreads - 1 ? args -> height : rowStart + rowsPerThread;
+    // mandelbrotSerial2(
+    //     args -> x0, args -> y0, args -> x1, args ->  y1,
+    //     args -> width, args -> height,
+    //     rowStart, rowEnd - rowStart,
+    //     args -> maxIterations,
+    //     args -> output
+    // );
 
 int blockSize = 16;  // Divide the image into 16x16 pixel blocks
-int blocksPerThread = (width * height) / (blockSize * blockSize) / numThreads;
+int blocksPerThread = (args -> width * args -> height) / (blockSize * blockSize) / args -> numThreads;
 
 for (int block = 0; block < blocksPerThread; block++) {
-    int startX = (block % (width / blockSize)) * blockSize;
-    int startY = (block / (width / blockSize)) * blockSize;
-    mandelbrotSerial(x0, y0, x1, y1, width, height, startY, blockSize, maxIterations, output);
+    int startX = (block % (args -> width / blockSize)) * blockSize;
+    int startY = (block / (args -> width / blockSize)) * blockSize;
+    mandelbrotSerial2(
+        x0, y0, x1, y1, 
+        width, height, startY, blockSize, maxIterations, output
+        );
 }
 
     // printf("Hello world from thread %d\n", args->threadId);
