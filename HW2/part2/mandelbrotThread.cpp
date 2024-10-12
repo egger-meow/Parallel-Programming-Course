@@ -97,7 +97,7 @@ void workerThreadStart(WorkerArgs *const args)
     for (int i = 0; i < args -> numThreads; i++) {
         for (int j = 0; j < args -> numThreads + 1; j++) {
             int id = i * (args -> numThreads + 1) + j;
-            if ((id - args -> threadId) % args -> numThreads == 0) {
+            if (!(id - args -> threadId) % args -> numThreads) {
                 int rowStart = i * rowsPerThread;
                 int rowEnd = i == args -> numThreads - 1 ? args -> height : rowStart + rowsPerThread;
                 int colStart = j * colsPerThread;
@@ -110,21 +110,9 @@ void workerThreadStart(WorkerArgs *const args)
                     args -> maxIterations,
                     args -> output
                 );
-
             } 
         }
     }
-    // int rowStart = args -> threadId * rowsPerThread;
-    // int rowEnd = args -> threadId == args -> numThreads - 1 ? args -> height : rowStart + rowsPerThread;
-    // mandelbrotSerial2(
-    //     args -> x0, args -> y0, args -> x1, args ->  y1,
-    //     args -> width, args -> height,
-    //     rowStart, rowEnd - rowStart,
-    //     args -> maxIterations,
-    //     args -> output
-    // );
-
-    // printf("Hello world from thread %d\n", args->threadId);
 }
 
 //
