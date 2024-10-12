@@ -92,16 +92,18 @@ void workerThreadStart(WorkerArgs *const args)
     // half of the image and thread 1 could compute the bottom half.
     // Of course, you can copy mandelbrotSerial() to this file and
     // modify it to pursue a better performance.
-    int rowsPerThread = args -> height / args -> numThreads;
-    int colsPerThread = args -> width / (args -> numThreads + 1);
-    for (int i = 0; i < args -> numThreads; i++) {
-        for (int j = 0; j < args -> numThreads + 1; j++) {
-            int id = i * (args -> numThreads + 1) + j;
+    int blocksX = args -> numThreads + 1;
+    int blocksY = args -> numThreads;
+    int rowsPerThread = args -> height / blocksY;
+    int colsPerThread = args -> width / blocksX;
+    for (int i = 0; i < blocksY; i++) {
+        for (int j = 0; j < blocksX; j++) {
+            int id = i * blocksX + j;
             if ((id - args -> threadId) % args -> numThreads == 0) {
                 int rowStart = i * rowsPerThread;
-                int rowEnd = i == args -> numThreads - 1 ? args -> height : rowStart + rowsPerThread;
+                int rowEnd = i == blocksY - 1 ? args -> height : rowStart + rowsPerThread;
                 int colStart = j * colsPerThread;
-                int colEnd = j == args -> numThreads  ? args -> width : colStart + colsPerThread;
+                int colEnd = j == blocksX - 1  ? args -> width : colStart + colsPerThread;
                 mandelbrotSerial2(
                     args -> x0, args -> y0, args -> x1, args ->  y1,
                     args -> width, args -> height,
