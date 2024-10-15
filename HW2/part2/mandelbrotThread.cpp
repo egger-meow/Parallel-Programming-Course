@@ -124,9 +124,9 @@ void mandelbrotThread(
     output = _output;
     numThreads = _numThreads;
     float ratio = static_cast<float>(width) / static_cast<float>(height) * numThreads + 0.5;
-    float sqrtResult = std::sqrt(static_cast<float>(numThreads));
-    blocksX = static_cast<int>(sqrtResult/ratio);
-    blocksY = static_cast<int>(sqrtResult*ratio);
+
+    blocksX = static_cast<int>(ratio);
+    blocksY = numThreads;
     rowsPerThread = height / blocksY;
     colsPerThread = width / blocksX;
 
