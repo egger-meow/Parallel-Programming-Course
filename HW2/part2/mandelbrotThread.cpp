@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <thread>
+#include <chrono>
 
 static float x0, x1;
 static float y0, y1;
@@ -76,14 +77,14 @@ void mandelbrotSerial2(
 // Thread entrypoint.
 static void workerThreadStart(int *const threadId)
 {
-    // TODO FOR PP STUDENTS: Implement the body of the worker
-    // thread here. Each thread could make a call to mandelbrotSerial()
-    // to compute a part of the output image. For example, in a
-    // program that uses two threads, thread 0 could compute the top
-    // half of the image and thread 1 could compute the bottom half.
-    // Of course, you can copy mandelbrotSerial() to this file and
-    // modify it to pursue a better performance.
-    int tid = *threadId;
+    // Start timing
+    auto start = std::chrono::high_resolution_clock::now();
+
+    int blocksX = args -> numThreads + 1;
+    int blocksY = args -> numThreads;
+    int rowsPerThread = args -> height / blocksY;
+    int colsPerThread = args -> width / blocksX;
+
     for (int i = 0; i < blocksY; i++) {
         for (int j = 0; j < blocksX; j++) {
             if (tid == 0) {
@@ -99,6 +100,11 @@ static void workerThreadStart(int *const threadId)
             tid = (tid + 1) % numThreads;
         }
     }
+
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
+
+    printf("Thread %d completed in %.6f seconds\n", args->threadId, elapsed.count());
 }
 
 //
