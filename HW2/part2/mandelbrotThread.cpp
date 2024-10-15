@@ -79,7 +79,7 @@ void mandelbrotSerial2(
 // workerThreadStart --
 //
 // Thread entrypoint.
-void workerThreadStart(WorkerArgs *const args)
+static void workerThreadStart(WorkerArgs *const args)
 {
 
     // TODO FOR PP STUDENTS: Implement the body of the worker
