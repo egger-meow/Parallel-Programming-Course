@@ -1,8 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <thread>
-#include <chrono>
-#include <iostream>
+
 
 static float x0, x1;
 static float y0, y1;
@@ -85,7 +84,7 @@ static void workerThreadStart(int *const threadId)
     int blocksY = args -> numThreads;
     int rowsPerThread = args -> height / blocksY;
     int colsPerThread = args -> width / blocksX;
-    std::cout << blocksX << " " << blocksX;
+
     for (int i = 0; i < blocksX; i++) {
         for (int j = 0; j < blocksX; j++) {
             if (tid == 0) {
