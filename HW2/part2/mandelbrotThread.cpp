@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <thread>
 #include <chrono>
+#include <iostream>
 
 typedef struct
 {
@@ -83,14 +84,14 @@ void mandelbrotSerial2(
 void workerThreadStart(WorkerArgs *const args)
 {
     // Start timing
-    auto start = std::chrono::high_resolution_clock::now();
+    // auto start = std::chrono::high_resolution_clock::now();
 
     int blocksX = args -> numThreads + 1;
     int blocksY = args -> numThreads;
     int rowsPerThread = args -> height / blocksY;
     int colsPerThread = args -> width / blocksX;
-
-    for (int i = 0; i < blocksY; i++) {
+    std::cout << blocksX << " " << blocksX;
+    for (int i = 0; i < blocksX; i++) {
         for (int j = 0; j < blocksX; j++) {
             int id = i * blocksX + j;
             if ((id - args -> threadId) % args -> numThreads == 0) {
@@ -110,10 +111,10 @@ void workerThreadStart(WorkerArgs *const args)
         }
     }
 
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> elapsed = end - start;
+    // auto end = std::chrono::high_resolution_clock::now();
+    // std::chrono::duration<double> elapsed = end - start;
 
-    printf("Thread %d completed in %.6f seconds\n", args->threadId, elapsed.count());
+    // printf("Thread %d completed in %.6f seconds\n", args->threadId, elapsed.count());
 }
 
 //
