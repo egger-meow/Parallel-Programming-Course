@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <thread>
+#include <cmath>
 
 static float x0, x1;
 static float y0, y1;
@@ -122,10 +123,10 @@ void mandelbrotThread(
     maxIterations = _maxIterations;
     output = _output;
     numThreads = _numThreads;
-    // float ratio = static_cast<float>(width) / static_cast<float>(height) * numThreads + 0.5;
-
-    blocksX = 10;
-    blocksY = 10;
+    float ratio = static_cast<float>(width) / static_cast<float>(height) * numThreads + 0.5;
+    float sqrtResult = std::sqrt(static_cast<float>(numThreads));
+    blocksX = static_cast<int>(sqrtResult/ratio);
+    blocksY = static_cast<int>(sqrtResult*ratio);
     rowsPerThread = height / blocksY;
     colsPerThread = width / blocksX;
 
