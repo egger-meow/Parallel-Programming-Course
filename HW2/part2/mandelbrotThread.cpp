@@ -20,7 +20,7 @@ static int colsPerThread;
 //     int maxIterations,
 //     int output[]);
 
-static inline int mandel(float c_re, float c_im, int count)
+inline int mandel(float c_re, float c_im, int count)
 {
   float z_re = c_re, z_im = c_im;
   int i;
@@ -50,7 +50,7 @@ static inline int mandel(float c_re, float c_im, int count)
 //   into the image viewport.
 // * width, height describe the size of the output image
 // * startRow, totalRows describe how much of the image to compute
-static void mandelbrotSerial2(
+void mandelbrotSerial2(
     int startRow, int endRow,
     int startRCol, int endCol)
 {
@@ -123,8 +123,8 @@ void mandelbrotThread(
     output = _output;
     numThreads = _numThreads;
     
-    blocksX = (numThreads + 1)/2;
-    blocksY = numThreads/2;
+    blocksX = (numThreads + 1);
+    blocksY = numThreads;
     rowsPerThread = height / blocksY;
     colsPerThread = width / blocksX;
 
