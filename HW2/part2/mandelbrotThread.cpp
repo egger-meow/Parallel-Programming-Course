@@ -123,8 +123,8 @@ void mandelbrotThread(
     output = _output;
     numThreads = _numThreads;
     
-    blocksX = numThreads + 1;
-    blocksY = numThreads;
+    blocksX = (numThreads + 1)/2;
+    blocksY = numThreads/2;
     rowsPerThread = height / blocksY;
     colsPerThread = width / blocksX;
 
