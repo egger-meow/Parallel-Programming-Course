@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <thread>
-#include <cmath>
 
 static float x0, x1;
 static float y0, y1;
