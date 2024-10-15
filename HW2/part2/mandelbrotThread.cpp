@@ -83,10 +83,10 @@ static void workerThreadStart(int *const threadId)
     // half of the image and thread 1 could compute the bottom half.
     // Of course, you can copy mandelbrotSerial() to this file and
     // modify it to pursue a better performance.
+    int tid = *threadId;
     for (int i = 0; i < blocksY; i++) {
         for (int j = 0; j < blocksX; j++) {
-            int id = i * blocksX + j;
-            if ((id - *threadId) % numThreads == 0) {
+            if (tid == 0) {
                 int rowStart = i * rowsPerThread;
                 int rowEnd = i == blocksY - 1 ? height : rowStart + rowsPerThread;
                 int colStart = j * colsPerThread;
@@ -96,6 +96,7 @@ static void workerThreadStart(int *const threadId)
                     colStart, colEnd
                 );
             } 
+            tid = (tid + 1) % numThreads;
         }
     }
 }
