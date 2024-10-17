@@ -15,4 +15,3 @@ force:
 # Clean up build files
 clean:
 	@rm -f $(TARGET)
-	@echo "Cleaned up $(TARGET)."

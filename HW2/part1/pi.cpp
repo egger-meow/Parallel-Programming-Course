@@ -58,5 +58,5 @@ int main(int argc, char* argv[])
 
     double estimatedPI = 4 * (double) numInCircle / (double) numToss;
 
-     printf("%.5f\n", estimatedPI);
+     printf("%.6f\n", estimatedPI);
 }
