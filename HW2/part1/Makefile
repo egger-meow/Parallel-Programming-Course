@@ -1,16 +1,18 @@
-# Compiler
+
 CXX = g++
 
-# Compiler flags
-CXXFLAGS = -Wall -g -pthread # Link with pthread
+CXXFLAGS = -Wall -g -pthread # Enable warnings, debugging, and link pthread
 
-# Target executable
 TARGET = pi.out
 
-# Build the target directly from pi.cpp
-$(TARGET): pi.cpp
+.PHONY: force clean
+
+$(TARGET): pi.cpp | force
 	@$(CXX) $(CXXFLAGS) -o $(TARGET) pi.cpp
+
+force:
 
 # Clean up build files
 clean:
 	@rm -f $(TARGET)
+	@echo "Cleaned up $(TARGET)."
