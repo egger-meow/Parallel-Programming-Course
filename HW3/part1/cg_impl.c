@@ -325,7 +325,7 @@ void sparse(double a[],
     size = 1.0;
     ratio = pow(rcond, (1.0 / (double)(n)));
 
-    #pragma omp parallel for
+    #pragma omp parallel for ordered
     for (i = 0; i < n; i++)
     {
         for (nza = 0; nza < arow[i]; nza++)
