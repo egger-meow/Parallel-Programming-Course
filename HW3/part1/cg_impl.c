@@ -65,7 +65,7 @@ void conj_grad(int colidx[],
         for (j = 0; j < lastrow - firstrow + 1; j++)
         {
             sum = 0.0;
-            #pragma omp for reduction(+:sum)
+            // #pragma omp for reduction(+:sum)
             for (k = rowstr[j]; k < rowstr[j + 1]; k++)
             {
                 sum = sum + a[k] * p[colidx[k]];
@@ -220,7 +220,7 @@ void makea(int n,
         sprnvc(n, nzv, nn1, vc, ivc);
         vecset(n, vc, ivc, &nzv, iouter + 1, 0.5);
         arow[iouter] = nzv;
-        #pragma omp barrier
+        #pragma omp ordered
         for (ivelt = 0; ivelt < nzv; ivelt++)
         {
             acol[iouter][ivelt] = ivc[ivelt] - 1;
