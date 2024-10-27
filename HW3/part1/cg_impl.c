@@ -24,7 +24,7 @@ void conj_grad(int colidx[],
     //---------------------------------------------------------------------
     // Initialize the CG algorithm:
     //---------------------------------------------------------------------
-    #pragma omp parallel for
+    // #pragma omp parallel for
     for (j = 0; j < naa + 1; j++)
     {
         q[j] = 0.0;
@@ -37,7 +37,7 @@ void conj_grad(int colidx[],
     // rho = r.r
     // Now, obtain the norm of r: First, sum squares of r elements locally...
     //---------------------------------------------------------------------
-    #pragma omp parallel for
+    // #pragma omp parallel for
     for (j = 0; j < lastcol - firstcol + 1; j++)
     {
         rho = rho + r[j] * r[j];
