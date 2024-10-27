@@ -3,6 +3,18 @@
 #include <thread>
 
 
+typedef struct
+{
+    float x0, x1;
+    float y0, y1;
+    unsigned int width;
+    unsigned int height;
+    int maxIterations;
+    int *output;
+    int threadId;
+    int numThreads;
+} WorkerArgs;
+
 static float x0, x1;
 static float y0, y1;
 static unsigned int width, height;
