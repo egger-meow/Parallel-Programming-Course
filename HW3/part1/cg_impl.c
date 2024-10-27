@@ -549,7 +549,7 @@ void init(double *zeta)
     //      Shift the col index vals from actual (firstcol --> lastcol )
     //      to local, i.e., (0 --> lastcol-firstcol)
     //---------------------------------------------------------------------
-    #pragma omp parallel for 
+    // #pragma omp parallel for 
     for (j = 0; j < lastrow - firstrow + 1; j++)
     {
         for (k = rowstr[j]; k < rowstr[j + 1]; k++)
