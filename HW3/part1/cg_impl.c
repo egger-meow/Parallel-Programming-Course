@@ -1,4 +1,6 @@
 #include "cg_impl.h"
+#include <omp.h>
+
 //---------------------------------------------------------------------
 // Floaging point arrays here are named as in spec discussion of
 // CG algorithm
