@@ -48,7 +48,7 @@ void conj_grad(int colidx[],
     // The conj grad iteration loop
     //---->
     //---------------------------------------------------------------------
-    #pragma omp parallel for
+    #pragma omp parallel for ordered
     for (cgit = 1; cgit <= cgitmax; cgit++)
     {
         //---------------------------------------------------------------------
@@ -65,6 +65,7 @@ void conj_grad(int colidx[],
         for (j = 0; j < lastrow - firstrow + 1; j++)
         {
             sum = 0.0;
+            #pragma omp for reduction(+:sum)
             for (k = rowstr[j]; k < rowstr[j + 1]; k++)
             {
                 sum = sum + a[k] * p[colidx[k]];
@@ -212,13 +213,14 @@ void makea(int n,
     //---------------------------------------------------------------------
     // Generate nonzero positions and save for the use in sparse.
     //---------------------------------------------------------------------
+    #pragma omp parallel for ordered
     for (iouter = 0; iouter < n; iouter++)
     {
         nzv = NONZER;
         sprnvc(n, nzv, nn1, vc, ivc);
         vecset(n, vc, ivc, &nzv, iouter + 1, 0.5);
         arow[iouter] = nzv;
-
+        #pragma omp barrier
         for (ivelt = 0; ivelt < nzv; ivelt++)
         {
             acol[iouter][ivelt] = ivc[ivelt] - 1;
@@ -323,6 +325,7 @@ void sparse(double a[],
     size = 1.0;
     ratio = pow(rcond, (1.0 / (double)(n)));
 
+    #pragma omp parallel for
     for (i = 0; i < n; i++)
     {
         for (nza = 0; nza < arow[i]; nza++)
@@ -400,6 +403,7 @@ void sparse(double a[],
         nzloc[j] = nzloc[j] + nzloc[j - 1];
     }
 
+    #pragma omp parallel for
     for (j = 0; j < nrows; j++)
     {
         if (j > 0)
@@ -545,6 +549,7 @@ void init(double *zeta)
     //      Shift the col index vals from actual (firstcol --> lastcol )
     //      to local, i.e., (0 --> lastcol-firstcol)
     //---------------------------------------------------------------------
+    #pragma omp parallel for
     for (j = 0; j < lastrow - firstrow + 1; j++)
     {
         for (k = rowstr[j]; k < rowstr[j + 1]; k++)
@@ -556,6 +561,8 @@ void init(double *zeta)
     //---------------------------------------------------------------------
     // set starting vector to (1, 1, .... 1)
     //---------------------------------------------------------------------
+    #pragma omp parallel for
+    
     for (i = 0; i < NA + 1; i++)
     {
         x[i] = 1.0;
@@ -585,6 +592,8 @@ void iterate(double *zeta, int *it)
     //---------------------------------------------------------------------
     norm_temp1 = 0.0;
     norm_temp2 = 0.0;
+
+    #pragma omp parallel for
     for (j = 0; j < lastcol - firstcol + 1; j++)
     {
         norm_temp1 = norm_temp1 + x[j] * z[j];
@@ -601,6 +610,7 @@ void iterate(double *zeta, int *it)
     //---------------------------------------------------------------------
     // Normalize z to obtain x
     //---------------------------------------------------------------------
+    #pragma omp parallel for
     for (j = 0; j < lastcol - firstcol + 1; j++)
     {
         x[j] = norm_temp2 * z[j];
