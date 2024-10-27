@@ -48,7 +48,7 @@ void conj_grad(int colidx[],
     // The conj grad iteration loop
     //---->
     //---------------------------------------------------------------------
-    #pragma omp parallel for ordered
+    // #pragma omp parallel for ordered
     for (cgit = 1; cgit <= cgitmax; cgit++)
     {
         //---------------------------------------------------------------------
@@ -325,7 +325,7 @@ void sparse(double a[],
     size = 1.0;
     ratio = pow(rcond, (1.0 / (double)(n)));
 
-    #pragma omp parallel for ordered
+    // #pragma omp parallel for ordered
     for (i = 0; i < n; i++)
     {
         for (nza = 0; nza < arow[i]; nza++)
