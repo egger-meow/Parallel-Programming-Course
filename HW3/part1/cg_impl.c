@@ -549,7 +549,7 @@ void init(double *zeta)
     //      Shift the col index vals from actual (firstcol --> lastcol )
     //      to local, i.e., (0 --> lastcol-firstcol)
     //---------------------------------------------------------------------
-    #pragma omp parallel for ordered
+    #pragma omp parallel for 
     for (j = 0; j < lastrow - firstrow + 1; j++)
     {
         for (k = rowstr[j]; k < rowstr[j + 1]; k++)
@@ -561,7 +561,7 @@ void init(double *zeta)
     //---------------------------------------------------------------------
     // set starting vector to (1, 1, .... 1)
     //---------------------------------------------------------------------
-    #pragma omp parallel for
+    // #pragma omp parallel for
     
     for (i = 0; i < NA + 1; i++)
     {
@@ -593,7 +593,7 @@ void iterate(double *zeta, int *it)
     norm_temp1 = 0.0;
     norm_temp2 = 0.0;
 
-    #pragma omp parallel for reduction(+:norm_temp1, norm_temp2)
+    // #pragma omp parallel for reduction(+:norm_temp1, norm_temp2)
     for (j = 0; j < lastcol - firstcol + 1; j++)
     {
         norm_temp1 = norm_temp1 + x[j] * z[j];
@@ -610,7 +610,7 @@ void iterate(double *zeta, int *it)
     //---------------------------------------------------------------------
     // Normalize z to obtain x
     //---------------------------------------------------------------------
-    #pragma omp parallel for
+    // #pragma omp parallel for
     for (j = 0; j < lastcol - firstcol + 1; j++)
     {
         x[j] = norm_temp2 * z[j];
