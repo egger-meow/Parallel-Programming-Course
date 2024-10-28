@@ -58,22 +58,22 @@ void pageRank(Graph g, double *solution, double damping, double convergence)
         }
 
 
-        double deadSum = 0.0
-        #pragma omp parallel for reduciton(+:deadSum)
+        double deadSum = 0.0;
+        #pragma omp parallel for reduction(+:deadSum)
         for (int v = 0; v < numNodes; v++) {
             if (outgoing_size(g, v) == 0) {
                 deadSum += damping * scoreOld[vi];
             }
         }
 
-        deadSum = damping * deadSum / numNodes
+        deadSum = damping * deadSum / numNodes;
         #pragma omp parallel for
         for (int vi = 0; vi < numNodes; vi++) 
             solution[vi] += deadSum;
         
 
         double globDiff = 0.0;
-        #pragma omp parallel for reduciton(+:globDiff)
+        #pragma omp parallel for reduction(+:globDiff)
         for (int vi = 0; vi < numNodes; vi++) {
             globDiff += fabs(solution[vi] - scoreOld[vi]);  
         }
