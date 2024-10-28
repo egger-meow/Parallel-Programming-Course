@@ -31,7 +31,6 @@ void pageRank(Graph g, double *solution, double damping, double convergence)
     }
 
     double *scoreOld = (double *) malloc(numNodes * sizeof(double));
-    // double *scoreNew = (double *) malloc(numNodes * sizeof(double));
 
     bool converge = false;
 
@@ -62,7 +61,7 @@ void pageRank(Graph g, double *solution, double damping, double convergence)
         #pragma omp parallel for reduction(+:deadSum)
         for (int v = 0; v < numNodes; v++) {
             if (outgoing_size(g, v) == 0) {
-                deadSum += damping * scoreOld[vi];
+                deadSum += damping * scoreOld[v];
             }
         }
 
