@@ -21,13 +21,51 @@ void pageRank(Graph g, double *solution, double damping, double convergence)
   // initialize vertex weights to uniform probability. Double
   // precision scores are used to avoid underflow for large graphs
 
-  int numNodes = num_nodes(g);
-  double equal_prob = 1.0 / numNodes;
-  for (int i = 0; i < numNodes; ++i)
-  {
-    solution[i] = equal_prob;
-  }
+    int numNodes = num_nodes(g);
+    double equal_prob = 1.0 / numNodes;
+    for (int i = 0; i < numNodes; ++i)
+    {
+        solution[i] = equal_prob;
+    }
 
+    double *scoreOld = (double *) malloc(numNodes * sizeof(double));
+    // double *scoreNew = (double *) malloc(numNodes * sizeof(double));
+
+    bool converge = false;
+
+    while (!converge) 
+    {
+        for (int i = 0; i < numNodes; ++i) {
+            scoreOld[i] = solution[i];
+        }
+
+        for (int vi = 0; vi < numNodes; vi++) {
+            double incomingScore = 0.0;
+
+            for (const Vertex *in = incoming_begin(g, vi); in != incoming_end(g, vi); ++in) {
+                Vertex vj = *in;
+                int totalOut = outgoing_size(g, vj);
+                if (totalOut > 0) {
+                    incomingScore += scoreOld[vj] / totalOut;
+                }
+            }
+            solution[vi] = damping * incomingScore + (1 - damping) / numNodes;
+        }
+
+        for (int vi = 0; vi < numNodes; vi++) {
+            if (outgoing_size(g, vi) == 0) {
+                solution[vi] += (damping * scoreOld[vi]) / numNodes;
+            }
+        }
+
+        double globDiff = 0.0;
+        for (int vi = 0; vi < numNodes; vi++) {
+            globDiff += fabs(solution[vi] - scoreOld[vi]);  
+        }
+        converge = globDiff < convergence;
+    }
+
+    free(scoreOld)
   /*
      For PP students: Implement the page rank algorithm here.  You
      are expected to parallelize the algorithm using openMP.  Your
