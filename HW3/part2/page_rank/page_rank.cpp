@@ -23,6 +23,8 @@ void pageRank(Graph g, double *solution, double damping, double convergence)
 
     int numNodes = num_nodes(g);
     double equal_prob = 1.0 / numNodes;
+
+    #pragma omp parallel for
     for (int i = 0; i < numNodes; ++i)
     {
         solution[i] = equal_prob;
@@ -35,14 +37,16 @@ void pageRank(Graph g, double *solution, double damping, double convergence)
 
     while (!converge) 
     {
+        #pragma omp parallel for
         for (int i = 0; i < numNodes; i++) {
             scoreOld[i] = solution[i];
         }
 
+        #pragma omp parallel for
         for (int vi = 0; vi < numNodes; vi++) {
             double incomingScore = 0.0;
 
-            for (const Vertex *in = incoming_begin(g, vi); in != incoming_end(g, vi); ++in) {
+            for (const Vertex *in = incoming_begin(g, vi); in != incoming_end(g, vi); in++) {
                 Vertex vj = *in;
                 int totalOut = outgoing_size(g, vj);
                 if (totalOut > 0) {
@@ -53,13 +57,23 @@ void pageRank(Graph g, double *solution, double damping, double convergence)
             solution[vi] = (damping * incomingScore) + ((1.0 - damping) / numNodes);
         }
 
-        for (int vi = 0; vi < numNodes; vi++) {
-            if (outgoing_size(g, vi) == 0) {
-                solution[vi] += (damping * scoreOld[vi]) / numNodes;
+
+        double deadSum = 0.0
+        #pragma omp parallel for reduciton(+:deadSum)
+        for (int v = 0; v < numNodes; v++) {
+            if (outgoing_size(g, v) == 0) {
+                deadSum += damping * scoreOld[vi];
             }
         }
 
+        deadSum = damping * deadSum / numNodes
+        #pragma omp parallel for
+        for (int vi = 0; vi < numNodes; vi++) 
+            solution[vi] += deadSum;
+        
+
         double globDiff = 0.0;
+        #pragma omp parallel for reduciton(+:globDiff)
         for (int vi = 0; vi < numNodes; vi++) {
             globDiff += fabs(solution[vi] - scoreOld[vi]);  
         }
