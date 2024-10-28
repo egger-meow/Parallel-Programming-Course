@@ -56,12 +56,11 @@ void pageRank(Graph g, double *solution, double damping, double convergence)
             solution[vi] = (damping * incomingScore) + ((1.0 - damping) / numNodes);
         }
 
-
         double deadSum = 0.0;
         #pragma omp parallel for reduction(+:deadSum)
         for (int v = 0; v < numNodes; v++) {
             if (outgoing_size(g, v) == 0) {
-                deadSum += damping * scoreOld[v];
+                deadSum += scoreOld[v];
             }
         }
 
