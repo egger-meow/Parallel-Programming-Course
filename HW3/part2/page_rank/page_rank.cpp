@@ -49,7 +49,8 @@ void pageRank(Graph g, double *solution, double damping, double convergence)
                     incomingScore += scoreOld[vj] / totalOut;
                 }
             }
-            solution[vi] = damping * incomingScore + (1 - damping) / numNodes;
+            
+            solution[vi] = (damping * incomingScore) + ((1.0 - damping) / numNodes);
         }
 
         for (int vi = 0; vi < numNodes; vi++) {
