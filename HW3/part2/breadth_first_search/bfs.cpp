@@ -105,8 +105,58 @@ void bfs_top_down(Graph graph, solution *sol)
     }
 }
 
+void bottom_up_step(
+    Graph g,
+    vertex_set *frontier,
+    vertex_set *new_frontier,
+    int *distances,
+    int i
+    )
+{
+    int start_edge = g->incoming_starts[i];
+    int end_edge = (i == g->num_nodes - 1)
+                ? g->num_edges
+                : g->incoming_starts[i + 1];
+    for (int neighbor = start_edge; neighbor < end_edge; neighbor++) {
+        int parent = g->incoming_edges[neighbor];
+        for (int j = 0; j < frontier->count; j++) {
+            if (frontier->vertices[j] == parent) {
+                new_frontier->vertices[new_frontier->count++] = i;
+                distances[i] = distances[j] + 1;
+                return;
+            }
+        }
+    }
+}
+
 void bfs_bottom_up(Graph graph, solution *sol)
 {
+    int nodes = graph -> num_nodes;
+
+    vertex_set list1;
+    vertex_set list2;
+    vertex_set_init(&list1, nodes);
+    vertex_set_init(&list2, nodes);
+
+    vertex_set *frontier = &list1;
+    vertex_set *new_frontier = &list2;
+
+    frontier->vertices[frontier->count++] = ROOT_NODE_ID;
+    sol->distances[ROOT_NODE_ID] = 0;
+
+    for (int i = 0; i < graph->num_nodes; i++)
+        sol->distances[i] = NOT_VISITED_MARKER;
+
+    do {
+        for (int i = 0; i < nodes; i++) {
+            if (sol->distances[i] == NOT_VISITED_MARKER ) {
+                bottom_up_step(graph, frontier, new_frontier, sol->distances, i);
+            }
+        }
+        vertex_set *tmp = frontier;
+        frontier = new_frontier;
+        new_frontier = tmp;
+    } while(frontier->count != 0);
     // For PP students:
     //
     // You will need to implement the "bottom up" BFS here as
