@@ -62,22 +62,26 @@ void top_down_step(
 void bottom_up_step(
     Graph g,
     vertex_set *frontier,
+    vertex_set *new_frontier,
     int *distances,
-    int i,
-    std::vector<int>& local_frontier)
+    int i)
 {
     int start_edge = g->incoming_starts[i];
     int end_edge = (i == g->num_nodes - 1) ? g->num_edges : g->incoming_starts[i + 1];
 
+    // Iterate through incoming edges
     for (int neighbor = start_edge; neighbor < end_edge; neighbor++) {
         int parent = g->incoming_edges[neighbor];
 
+        // Check if the parent is already visited and in the current frontier
         if (distances[parent] != NOT_VISITED_MARKER) {
-            if (distances[i] == NOT_VISITED_MARKER) {
-                distances[i] = distances[parent] + 1;
-                local_frontier.push_back(i);
-                return;
+            distances[i] = distances[parent] + 1;
+
+            #pragma omp critical
+            {
+                new_frontier->vertices[new_frontier->count++] = i;
             }
+            return;
         }
     }
 }
@@ -93,44 +97,32 @@ void bfs_bottom_up(Graph graph, solution *sol)
     vertex_set *frontier = &list1;
     vertex_set *new_frontier = &list2;
 
+    // Initialize all distances to NOT_VISITED
     #pragma omp parallel for
-    for (int i = 0; i < nodes; i++)
+    for (int i = 0; i < nodes; i++) {
         sol->distances[i] = NOT_VISITED_MARKER;
+    }
 
+    // Start BFS from root node
     frontier->vertices[frontier->count++] = ROOT_NODE_ID;
     sol->distances[ROOT_NODE_ID] = 0;
 
-    do {
+    while (frontier->count != 0) {
         vertex_set_clear(new_frontier);
 
-        // Use thread-local frontiers to reduce contention
-        #pragma omp parallel
-        {
-            std::vector<int> local_frontier;
-
-            #pragma omp for nowait
-            for (int i = 0; i < nodes; i++) {
-                if (sol->distances[i] == NOT_VISITED_MARKER) {
-                    bottom_up_step(graph, frontier, sol->distances, i, local_frontier);
-                }
-            }
-
-            // Merge local frontiers into the global new_frontier
-            #pragma omp critical
-            {
-                for (int v : local_frontier) {
-                    new_frontier->vertices[new_frontier->count++] = v;
-                }
+        #pragma omp parallel for
+        for (int i = 0; i < nodes; i++) {
+            if (sol->distances[i] == NOT_VISITED_MARKER) {
+                bottom_up_step(graph, frontier, new_frontier, sol->distances, i);
             }
         }
 
+        // Swap frontiers
         vertex_set *tmp = frontier;
         frontier = new_frontier;
         new_frontier = tmp;
-
-    } while (frontier->count != 0);
+    }
 }
-
 void bfs_hybrid(Graph graph, solution *sol)
 {
     // For PP students:
