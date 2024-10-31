@@ -142,11 +142,11 @@ void bfs_bottom_up(Graph graph, solution *sol)
     vertex_set *frontier = &list1;
     vertex_set *new_frontier = &list2;
 
-    frontier->vertices[frontier->count++] = ROOT_NODE_ID;
-    sol->distances[ROOT_NODE_ID] = 0;
         
     for (int i = 0; i < nodes; i++)
         sol->distances[i] = NOT_VISITED_MARKER;
+    frontier->vertices[frontier->count++] = ROOT_NODE_ID;
+    sol->distances[ROOT_NODE_ID] = 0;
 
     do {
         for (int i = 0; i < nodes; i++) {
