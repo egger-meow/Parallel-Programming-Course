@@ -108,7 +108,8 @@ void bfs_top_down(Graph graph, solution *sol)
 
 void bottom_up_step(Graph graph, solution *sol, int current_distance) {
     int num_nodes = graph->num_nodes;
-    
+
+    #pragma omp parallel for
     for (int v = 0; v < num_nodes; v++) {
         // If this node is already visited, skip it
         if (sol->distances[v] != -1) {
@@ -118,7 +119,6 @@ void bottom_up_step(Graph graph, solution *sol, int current_distance) {
         // Check if any neighbor has the current distance
         const Vertex* start = incoming_begin(graph, v);
         const Vertex* end = incoming_end(graph, v);
-        
         for (const Vertex* neighbor = start; neighbor != end; neighbor++) {
             if (sol->distances[*neighbor] == current_distance) {
                 sol->distances[v] = current_distance + 1;
@@ -127,10 +127,12 @@ void bottom_up_step(Graph graph, solution *sol, int current_distance) {
         }
     }
 }
+
 void bfs_bottom_up(Graph graph, solution *sol) {
     int num_nodes = graph->num_nodes;
     
     // Initialize distances to -1 (indicating unvisited nodes)
+    #pragma omp parallel for
     for (int i = 0; i < num_nodes; i++) {
         sol->distances[i] = -1;
     }
@@ -142,6 +144,7 @@ void bfs_bottom_up(Graph graph, solution *sol) {
     // Perform BFS layer by layer
     while (1) {
         int previous_count = 0;
+        #pragma omp parallel for reduction(+:previous_count)
         for (int i = 0; i < num_nodes; i++) {
             if (sol->distances[i] == -1) previous_count++;
         }
@@ -149,6 +152,7 @@ void bfs_bottom_up(Graph graph, solution *sol) {
         bottom_up_step(graph, sol, current_distance);
 
         int remaining_count = 0;
+        #pragma omp parallel for reduction(+:remaining_count)
         for (int i = 0; i < num_nodes; i++) {
             if (sol->distances[i] == -1) remaining_count++;
         }
