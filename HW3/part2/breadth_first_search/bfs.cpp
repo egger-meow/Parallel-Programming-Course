@@ -151,14 +151,14 @@ void bfs_bottom_up(Graph graph, solution *sol)
     do {
         for (int i = 0; i < nodes; i++) {
             if (sol->distances[i] == NOT_VISITED_MARKER ) {
-                bottom_up_step(graph, new_frontier, frontier, sol->distances, i);
+                bottom_up_step(graph, frontier, new_frontier, sol->distances, i);
             }
         }
+        cerr << "---test---" << new_frontier->count << endl;
         vertex_set *tmp = frontier;
         frontier = new_frontier;
         new_frontier = tmp;
         vertex_set_clear(new_frontier);
-        cerr << "---test---" << frontier->count << endl;
         cerr.flush();
     } while(frontier->count != 0);
     // For PP students:
