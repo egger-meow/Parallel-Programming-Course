@@ -117,14 +117,14 @@ void bottom_up_step(Graph g, solution *sol, int curDis) {
             
             const Vertex* start = incoming_begin(g, i);
             const Vertex* end = incoming_end(g, i);
+            bool found = 0;
             #pragma omp simd
-            for (const Vertex* neighbor = start; neighbor != end; neighbor++) {
+            for (const Vertex* neighbor = start; neighbor != end && !found; neighbor++) {
                 if (sol->distances[*neighbor] == curDis) {
+                    found = 1;
                     sol->distances[i] = curDis + 1;
-                    goto k;
                 }
             }
-            k:
         }
     }
 }
