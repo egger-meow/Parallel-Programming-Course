@@ -157,7 +157,8 @@ void bfs_bottom_up(Graph graph, solution *sol)
         vertex_set *tmp = frontier;
         frontier = new_frontier;
         new_frontier = tmp;
-        cerr << "---test---" << new_frontier->count << endl;
+        vertex_set_clear(new_frontier);
+        cerr << "---test---" << frontier->count << endl;
         cerr.flush();
     } while(frontier->count != 0);
     // For PP students:
