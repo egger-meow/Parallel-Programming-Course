@@ -110,7 +110,7 @@ void bottom_up_step(Graph g, solution *sol, int curDis) {
 
     #pragma omp parallel for
     for (int i = 0; i < g->num_nodes; i++) {
-        if (sol->distances[v] != NOT_VISITED_MARKER) 
+        if (sol->distances[i] != NOT_VISITED_MARKER) 
             continue;
         
         const Vertex* start = incoming_begin(g, i);
@@ -139,14 +139,14 @@ void bfs_bottom_up(Graph graph, solution *sol) {
         int preCount = 0;
         int remainCount = 0;
 
-        #pragma omp parallel for reduction(+:previous_count)
+        #pragma omp parallel for reduction(+:preCount)
         for (int i = 0; i < graph->num_nodes; i++) {
             if (sol->distances[i] == -1) preCount++;
         }
 
         bottom_up_step(graph, sol, curDis);
 
-        #pragma omp parallel for reduction(+:remaining_count)
+        #pragma omp parallel for reduction(+:remainCount)
         for (int i = 0; i < graph->num_nodes; i++) {
             if (sol->distances[i] == -1) remainCount++;
         }
