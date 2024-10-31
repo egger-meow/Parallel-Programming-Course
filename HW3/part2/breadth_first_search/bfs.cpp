@@ -5,7 +5,8 @@
 #include <string.h>
 #include <cstddef>
 #include <omp.h>
-
+#include<iostream>
+using namespace std;
 #include "../common/CycleTimer.h"
 #include "../common/graph.h"
 
@@ -144,7 +145,7 @@ void bfs_bottom_up(Graph graph, solution *sol)
     frontier->vertices[frontier->count++] = ROOT_NODE_ID;
     sol->distances[ROOT_NODE_ID] = 0;
     return;
-        printf("%d", new_frontier->count);
+        cout << "test" << new_frontier->count;
         fflush(stdout);
     for (int i = 0; i < graph->num_nodes; i++)
         sol->distances[i] = NOT_VISITED_MARKER;
