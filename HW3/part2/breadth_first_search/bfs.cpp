@@ -102,6 +102,7 @@ void bfs_top_down(Graph graph, solution *sol)
         vertex_set *tmp = frontier;
         frontier = new_frontier;
         new_frontier = tmp;
+        vertex_set_clear(new_frontier)
     }
 }
 
