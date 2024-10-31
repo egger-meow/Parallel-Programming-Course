@@ -155,12 +155,12 @@ void bfs_bottom_up(Graph graph, solution *sol)
                 bottom_up_step(graph, frontier, new_frontier, sol->distances, i);
             }
         }
-        cerr << "---test---" << new_frontier->count << endl;
+
         vertex_set *tmp = frontier;
         frontier = new_frontier;
         new_frontier = tmp;
         vertex_set_clear(new_frontier);
-        cerr.flush();
+
     } while(frontier->count != 0);
     // For PP students:
     //
