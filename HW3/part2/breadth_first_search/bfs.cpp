@@ -145,11 +145,12 @@ void bfs_bottom_up(Graph graph, solution *sol)
     frontier->vertices[frontier->count++] = ROOT_NODE_ID;
     sol->distances[ROOT_NODE_ID] = 0;
         
-    for (int i = 0; i < graph->num_nodes; i++)
+    for (int i = 0; i < graph->num_nodesnodes; i++)
         sol->distances[i] = NOT_VISITED_MARKER;
 
     do {
         for (int i = 0; i < nodes; i++) {
+            cerr << i << "---test---" << new_frontier->count << endl;
             if (sol->distances[i] == NOT_VISITED_MARKER ) {
                 bottom_up_step(graph, frontier, new_frontier, sol->distances, i);
             }
