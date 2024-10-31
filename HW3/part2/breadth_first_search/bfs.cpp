@@ -151,7 +151,7 @@ void bfs_bottom_up(Graph graph, solution *sol)
     do {
         for (int i = 0; i < nodes; i++) {
             if (sol->distances[i] == NOT_VISITED_MARKER ) {
-                bottom_up_step(graph, frontier, new_frontier, sol->distances, i);
+                bottom_up_step(graph, new_frontier, frontier, sol->distances, i);
             }
         }
         vertex_set *tmp = frontier;
