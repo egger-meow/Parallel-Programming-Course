@@ -111,29 +111,37 @@ void bottom_up_step(
     vertex_set *frontier,
     vertex_set *new_frontier,
     int *distances,
-    int i
-    )
-{
+    int i,
+    int *local_new_frontier_count,
+    int *local_new_frontier
+) {
     int start_edge = g->incoming_starts[i];
     int end_edge = (i == g->num_nodes - 1)
                 ? g->num_edges
                 : g->incoming_starts[i + 1];
+    
     for (int neighbor = start_edge; neighbor < end_edge; neighbor++) {
         int parent = g->incoming_edges[neighbor];
-        if (distances[parent] != NOT_VISITED_MARKER)
+        
+        // Check if parent is already visited
+        if (distances[parent] != NOT_VISITED_MARKER) {
+            // Check if parent is in the current frontier
             for (int j = 0; j < frontier->count; j++) {
                 if (frontier->vertices[j] == parent) {
-                    new_frontier->vertices[new_frontier->count++] = i;
+                    // Use atomic operation or local buffer to avoid race conditions
+                    int idx = __sync_fetch_and_add(local_new_frontier_count, 1);
+                    local_new_frontier[idx] = i;
                     distances[i] = distances[parent] + 1;
                     return;
                 }
             }
+        }
     }
 }
 
 void bfs_bottom_up(Graph graph, solution *sol)
 {
-    int nodes = graph -> num_nodes;
+    int nodes = graph->num_nodes;
 
     vertex_set list1;
     vertex_set list2;
@@ -143,39 +151,51 @@ void bfs_bottom_up(Graph graph, solution *sol)
     vertex_set *frontier = &list1;
     vertex_set *new_frontier = &list2;
 
-    #pragma omp parallel for    
+    // Initialize distances
+    #pragma omp parallel for
     for (int i = 0; i < nodes; i++)
         sol->distances[i] = NOT_VISITED_MARKER;
+    
     frontier->vertices[frontier->count++] = ROOT_NODE_ID;
     sol->distances[ROOT_NODE_ID] = 0;
 
     do {
-        #pragma omp parallel for
-        for (int i = 0; i < nodes; i++) {
-            // cerr << i << "---test---" << new_frontier->count << endl;
-            if (sol->distances[i] == NOT_VISITED_MARKER) {
-                bottom_up_step(graph, frontier, new_frontier, sol->distances, i);
+        // Local buffers for thread-safe frontier expansion
+        int local_new_frontier_count = 0;
+        int *local_new_frontier = (int*)malloc(nodes * sizeof(int));
+        
+        #pragma omp parallel
+        {
+            // Local thread-private variables to reduce contention
+            int thread_local_count = 0;
+            int *thread_local_frontier = (int*)malloc(nodes * sizeof(int));
+            
+            #pragma omp for
+            for (int i = 0; i < nodes; i++) {
+                if (sol->distances[i] == NOT_VISITED_MARKER) {
+                    bottom_up_step(graph, frontier, new_frontier, sol->distances, 
+                                   i, &local_new_frontier_count, local_new_frontier);
+                }
             }
+            
+            free(thread_local_frontier);
         }
-    
+        
+        // Copy local new frontier to actual new frontier
+        new_frontier->count = local_new_frontier_count;
+        memcpy(new_frontier->vertices, local_new_frontier, 
+               local_new_frontier_count * sizeof(int));
+        
+        free(local_new_frontier);
+        
+        // Swap frontiers
         vertex_set *tmp = frontier;
         frontier = new_frontier;
         new_frontier = tmp;
+        
+        // Clear the new frontier for next iteration
         vertex_set_clear(new_frontier);
-        // cerr << frontier->count << endl;
-        // cerr.flush();
     } while(frontier->count != 0);
-    // For PP students:
-    //
-    // You will need to implement the "bottom up" BFS here as
-    // described in the handout.
-    //
-    // As a result of your code's execution, sol.distances should be
-    // correctly populated for all nodes in the graph.
-    //
-    // As was done in the top-down case, you may wish to organize your
-    // code by creating subroutine bottom_up_step() that is called in
-    // each step of the BFS process.
 }
 
 void bfs_hybrid(Graph graph, solution *sol)
