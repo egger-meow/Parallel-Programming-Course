@@ -34,7 +34,7 @@ void top_down_step(
     vertex_set *new_frontier,
     int *distances)
 {
-    #pragma omp parallel for
+    #pragma omp parallel for nowait
     for (int i = 0; i < frontier->count; i++)
     {
 
@@ -46,6 +46,7 @@ void top_down_step(
                            : g->outgoing_starts[node + 1];
 
         // attempt to add all neighbors to the new frontier
+        #pragma omp simd
         for (int neighbor = start_edge; neighbor < end_edge; neighbor++)
         {
             int outgoing = g->outgoing_edges[neighbor];
@@ -134,18 +135,14 @@ void bfs_bottom_up(Graph graph, solution *sol) {
     // Assume the BFS starts from node 0
     sol->distances[ROOT_NODE_ID] = 0;
     int curDis = 0;
+    int remainCount = graph->num_nodes - 1;
 
     while (1) {
-        int preCount = 0;
-        int remainCount = 0;
-
-        #pragma omp parallel for reduction(+:preCount)
-        for (int i = 0; i < graph->num_nodes; i++) {
-            if (sol->distances[i] == -1) preCount++;
-        }
+        int preCount = remainCount;
 
         bottom_up_step(graph, sol, curDis);
-
+        
+        remainCount = 0;
         #pragma omp parallel for reduction(+:remainCount)
         for (int i = 0; i < graph->num_nodes; i++) {
             if (sol->distances[i] == -1) remainCount++;
