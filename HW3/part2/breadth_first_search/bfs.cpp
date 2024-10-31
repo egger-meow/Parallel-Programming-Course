@@ -108,17 +108,21 @@ void bfs_top_down(Graph graph, solution *sol)
 
 void bottom_up_step(Graph g, solution *sol, int curDis) {
 
-    #pragma omp parallel for
-    for (int i = 0; i < g->num_nodes; i++) {
-        if (sol->distances[i] != NOT_VISITED_MARKER) 
-            continue;
-        
-        const Vertex* start = incoming_begin(g, i);
-        const Vertex* end = incoming_end(g, i);
-        for (const Vertex* neighbor = start; neighbor != end; neighbor++) {
-            if (sol->distances[*neighbor] == curDis) {
-                sol->distances[i] = curDis + 1;
-                break; 
+    #pragma omp parallel 
+    {
+        #pragma omp for nowait
+        for (int i = 0; i < g->num_nodes; i++) {
+            if (sol->distances[i] != NOT_VISITED_MARKER) 
+                continue;
+            
+            const Vertex* start = incoming_begin(g, i);
+            const Vertex* end = incoming_end(g, i);
+            #pragma omp simd
+            for (const Vertex* neighbor = start; neighbor != end; neighbor++) {
+                if (sol->distances[*neighbor] == curDis) {
+                    sol->distances[i] = curDis + 1;
+                    break; 
+                }
             }
         }
     }
@@ -126,7 +130,7 @@ void bottom_up_step(Graph g, solution *sol, int curDis) {
 
 void bfs_bottom_up(Graph graph, solution *sol) {
     
-    #pragma omp parallel for
+    #pragma omp parallel for simd
     for (int i = 0; i < graph->num_nodes; i++) {
         sol->distances[i] = -1;
     }
