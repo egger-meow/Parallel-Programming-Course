@@ -121,7 +121,7 @@ void bottom_up_step(
     for (int neighbor = start_edge; neighbor < end_edge; neighbor++) {
         int parent = g->incoming_edges[neighbor];
         if (distances[parent] != NOT_VISITED_MARKER) {
-            if (sol->distances[i] == NOT_VISITED_MARKER ) {
+            if (distances[i] == NOT_VISITED_MARKER ) {
                 new_frontier->vertices[new_frontier->count++] = i;
                 distances[i] = distances[parent] + 1;
             }
