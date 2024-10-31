@@ -120,12 +120,12 @@ void bottom_up_step(
                 : g->incoming_starts[i + 1];
     for (int neighbor = start_edge; neighbor < end_edge; neighbor++) {
         int parent = g->incoming_edges[neighbor];
-        if (distances[parent] != NOT_VISITED_MARKER) {
-            if (distances[i] == NOT_VISITED_MARKER ) {
+        for (int j = 0; j < frontier->count; j++) {
+            if (frontier->vertices[j] == parent) {
                 new_frontier->vertices[new_frontier->count++] = i;
                 distances[i] = distances[parent] + 1;
-            }
                 return;
+            }
         }
     }
 }
@@ -155,8 +155,6 @@ void bfs_bottom_up(Graph graph, solution *sol)
                 bottom_up_step(graph, frontier, new_frontier, sol->distances, i);
             }
         }
-
-        vertex_set *tmp = frontier;
         frontier = new_frontier;
         new_frontier = tmp;
         vertex_set_clear(new_frontier);
