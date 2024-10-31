@@ -127,13 +127,11 @@ void bottom_up_step(
             // Check if the parent is in the current frontier
             for (int j = 0; j < frontier->count; j++) {
                 if (frontier->vertices[j] == parent) {
-                    // Add this vertex to the new frontier
-                    new_frontier->vertices[new_frontier->count++] = i;
-                    
-                    // Update the distance
-                    distances[i] = distances[parent] + 1;
-                    
-                    // Stop searching once a path is found
+                    if (__sync_bool_compare_and_swap(&distances[i], NOT_VISITED_MARKER, distances[parent] + 1)) {
+                        // Atomically add vertex to new frontier
+                        int idx = __sync_fetch_and_add(&new_frontier->count, 1);
+                        new_frontier->vertices[idx] = i;
+                    }
                     return;
                 }
             }
