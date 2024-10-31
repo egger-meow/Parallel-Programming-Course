@@ -123,7 +123,7 @@ void bottom_up_step(
         for (int j = 0; j < frontier->count; j++) {
             if (frontier->vertices[j] == parent) {
                 new_frontier->vertices[new_frontier->count++] = i;
-                distances[i] = distances[j] + 1;
+                distances[i] = distances[parent] + 1;
                 return;
             }
         }
