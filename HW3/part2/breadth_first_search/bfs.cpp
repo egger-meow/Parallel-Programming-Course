@@ -120,13 +120,14 @@ void bottom_up_step(
                 : g->incoming_starts[i + 1];
     for (int neighbor = start_edge; neighbor < end_edge; neighbor++) {
         int parent = g->incoming_edges[neighbor];
-        for (int j = 0; j < frontier->count; j++) {
-            if (frontier->vertices[j] == parent) {
-                new_frontier->vertices[new_frontier->count++] = i;
-                distances[i] = distances[parent] + 1;
-                return;
+        if (distances[parent] != NOT_VISITED_MARKER)
+            for (int j = 0; j < frontier->count; j++) {
+                if (frontier->vertices[j] == parent) {
+                    new_frontier->vertices[new_frontier->count++] = i;
+                    distances[i] = distances[parent] + 1;
+                    return;
+                }
             }
-        }
     }
 }
 
@@ -142,16 +143,17 @@ void bfs_bottom_up(Graph graph, solution *sol)
     vertex_set *frontier = &list1;
     vertex_set *new_frontier = &list2;
 
-        
+    #pragma omp parallel for    
     for (int i = 0; i < nodes; i++)
         sol->distances[i] = NOT_VISITED_MARKER;
     frontier->vertices[frontier->count++] = ROOT_NODE_ID;
     sol->distances[ROOT_NODE_ID] = 0;
 
     do {
+        #pragma omp parallel for
         for (int i = 0; i < nodes; i++) {
             // cerr << i << "---test---" << new_frontier->count << endl;
-            if (sol->distances[i] == NOT_VISITED_MARKER ) {
+            if (sol->distances[i] == NOT_VISITED_MARKER) {
                 bottom_up_step(graph, frontier, new_frontier, sol->distances, i);
             }
         }
