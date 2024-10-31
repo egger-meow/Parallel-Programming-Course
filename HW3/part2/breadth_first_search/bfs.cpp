@@ -111,91 +111,103 @@ void bottom_up_step(
     vertex_set *frontier,
     vertex_set *new_frontier,
     int *distances,
-    int i,
-    int *local_new_frontier_count,
-    int *local_new_frontier
+    int current_level
 ) {
-    int start_edge = g->incoming_starts[i];
-    int end_edge = (i == g->num_nodes - 1)
-                ? g->num_edges
-                : g->incoming_starts[i + 1];
-    
-    for (int neighbor = start_edge; neighbor < end_edge; neighbor++) {
-        int parent = g->incoming_edges[neighbor];
-        
-        // Check if parent is already visited
-        if (distances[parent] != NOT_VISITED_MARKER) {
-            // Check if parent is in the current frontier
-            for (int j = 0; j < frontier->count; j++) {
-                if (frontier->vertices[j] == parent) {
-                    // Use atomic operation or local buffer to avoid race conditions
-                    int idx = __sync_fetch_and_add(local_new_frontier_count, 1);
-                    local_new_frontier[idx] = i;
-                    distances[i] = distances[parent] + 1;
-                    return;
+    // Use OpenMP to parallelize the node exploration
+    #pragma omp parallel
+    {
+        // Thread-local new frontier to avoid race conditions
+        int local_new_frontier_count = 0;
+        int *local_new_frontier = (int*)malloc(g->num_nodes * sizeof(int));
+
+        #pragma omp for
+        for (int node = 0; node < g->num_nodes; node++) {
+            // Only process unvisited nodes
+            if (distances[node] == NOT_VISITED_MARKER) {
+                // Locate the range of incoming edges for this node
+                int start_edge = g->incoming_starts[node];
+                int end_edge = (node == g->num_nodes - 1)
+                    ? g->num_edges
+                    : g->incoming_starts[node + 1];
+
+                // Check all incoming edges
+                for (int edge_idx = start_edge; edge_idx < end_edge; edge_idx++) {
+                    int parent = g->incoming_edges[edge_idx];
+                    
+                    // Check if parent is in current frontier and already visited
+                    if (distances[parent] != NOT_VISITED_MARKER) {
+                        // Check if parent is actually in the current frontier
+                        for (int j = 0; j < frontier->count; j++) {
+                            if (frontier->vertices[j] == parent) {
+                                // Atomic add to local frontier
+                                int local_idx = __sync_fetch_and_add(&local_new_frontier_count, 1);
+                                local_new_frontier[local_idx] = node;
+                                
+                                // Atomic update of distance (to handle potential race)
+                                __sync_bool_compare_and_swap(&distances[node], NOT_VISITED_MARKER, current_level);
+                                
+                                // Break out of inner loops
+                                goto next_node;
+                            }
+                        }
+                    }
                 }
             }
+            next_node:; // Label to break out of nested loops
         }
+
+        // Thread-safe merge of local frontiers
+        #pragma omp critical
+        {
+            for (int i = 0; i < local_new_frontier_count; i++) {
+                new_frontier->vertices[new_frontier->count++] = local_new_frontier[i];
+            }
+        }
+
+        // Free local memory
+        free(local_new_frontier);
     }
 }
 
-void bfs_bottom_up(Graph graph, solution *sol)
-{
+void bfs_bottom_up(Graph graph, solution *sol) {
     int nodes = graph->num_nodes;
 
-    vertex_set list1;
-    vertex_set list2;
+    // Larger vertex sets for big graphs
+    vertex_set list1, list2;
     vertex_set_init(&list1, nodes);
     vertex_set_init(&list2, nodes);
 
     vertex_set *frontier = &list1;
     vertex_set *new_frontier = &list2;
 
-    // Initialize distances
+    // Parallel initialization of distances
     #pragma omp parallel for
-    for (int i = 0; i < nodes; i++)
+    for (int i = 0; i < nodes; i++) {
         sol->distances[i] = NOT_VISITED_MARKER;
-    
+    }
+
+    // Initialize root node
     frontier->vertices[frontier->count++] = ROOT_NODE_ID;
     sol->distances[ROOT_NODE_ID] = 0;
 
-    do {
-        // Local buffers for thread-safe frontier expansion
-        int local_new_frontier_count = 0;
-        int *local_new_frontier = (int*)malloc(nodes * sizeof(int));
-        
-        #pragma omp parallel
-        {
-            // Local thread-private variables to reduce contention
-            int thread_local_count = 0;
-            int *thread_local_frontier = (int*)malloc(nodes * sizeof(int));
-            
-            #pragma omp for
-            for (int i = 0; i < nodes; i++) {
-                if (sol->distances[i] == NOT_VISITED_MARKER) {
-                    bottom_up_step(graph, frontier, new_frontier, sol->distances, 
-                                   i, &local_new_frontier_count, local_new_frontier);
-                }
-            }
-            
-            free(thread_local_frontier);
-        }
-        
-        // Copy local new frontier to actual new frontier
-        new_frontier->count = local_new_frontier_count;
-        memcpy(new_frontier->vertices, local_new_frontier, 
-               local_new_frontier_count * sizeof(int));
-        
-        free(local_new_frontier);
-        
+    int current_level = 1;
+
+    // Bottom-up BFS traversal
+    while (frontier->count > 0) {
+        // Clear new frontier before each iteration
+        vertex_set_clear(new_frontier);
+
+        // Explore frontier
+        bottom_up_step(graph, frontier, new_frontier, sol->distances, current_level);
+
         // Swap frontiers
         vertex_set *tmp = frontier;
         frontier = new_frontier;
         new_frontier = tmp;
-        
-        // Clear the new frontier for next iteration
-        vertex_set_clear(new_frontier);
-    } while(frontier->count != 0);
+
+        // Increment level
+        current_level++;
+    }
 }
 
 void bfs_hybrid(Graph graph, solution *sol)
