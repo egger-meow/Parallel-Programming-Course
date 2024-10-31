@@ -102,7 +102,6 @@ void bfs_top_down(Graph graph, solution *sol)
         vertex_set *tmp = frontier;
         frontier = new_frontier;
         new_frontier = tmp;
-        vertex_set_clear(new_frontier)
     }
 }
 
@@ -157,6 +156,7 @@ void bfs_bottom_up(Graph graph, solution *sol)
         vertex_set *tmp = frontier;
         frontier = new_frontier;
         new_frontier = tmp;
+        vertex_set_clear(new_frontier);
     } while(frontier->count != 0);
     // For PP students:
     //
