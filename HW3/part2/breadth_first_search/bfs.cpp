@@ -144,8 +144,7 @@ void bfs_bottom_up(Graph graph, solution *sol)
 
     frontier->vertices[frontier->count++] = ROOT_NODE_ID;
     sol->distances[ROOT_NODE_ID] = 0;
-        cerr << "---test---\n" << new_frontier->count;
-        cerr.flush();
+        
     return;
     for (int i = 0; i < graph->num_nodes; i++)
         sol->distances[i] = NOT_VISITED_MARKER;
@@ -160,6 +159,8 @@ void bfs_bottom_up(Graph graph, solution *sol)
         frontier = new_frontier;
         new_frontier = tmp;
         vertex_set_clear(new_frontier);
+        cerr << "---test---" << new_frontier->count << endl;
+        cerr.flush();
     } while(frontier->count != 0);
     // For PP students:
     //
