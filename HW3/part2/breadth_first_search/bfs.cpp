@@ -157,6 +157,7 @@ void bfs_bottom_up(Graph graph, solution *sol)
         frontier = new_frontier;
         new_frontier = tmp;
         vertex_set_clear(new_frontier);
+        printf("%d", new_frontier->count, end_time - start_tim);
     } while(frontier->count != 0);
     // For PP students:
     //
