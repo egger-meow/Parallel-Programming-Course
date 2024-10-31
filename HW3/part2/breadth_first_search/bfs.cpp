@@ -59,68 +59,59 @@ void top_down_step(
     }
 }
 
-void bottom_up_step(
-    Graph g,
-    vertex_set *frontier,
-    vertex_set *new_frontier,
-    int *distances,
-    int i)
-{
-    int start_edge = g->incoming_starts[i];
-    int end_edge = (i == g->num_nodes - 1) ? g->num_edges : g->incoming_starts[i + 1];
+void bottom_up_step(Graph graph, solution *sol, int current_distance) {
+    int num_nodes = graph->num_nodes;
+    
+    for (int v = 0; v < num_nodes; v++) {
+        // If this node is already visited, skip it
+        if (sol->distances[v] != -1) {
+            continue;
+        }
 
-    // Iterate through incoming edges
-    for (int neighbor = start_edge; neighbor < end_edge; neighbor++) {
-        int parent = g->incoming_edges[neighbor];
-
-        // Check if the parent is already visited and in the current frontier
-        if (distances[parent] != NOT_VISITED_MARKER) {
-            distances[i] = distances[parent] + 1;
-
-            #pragma omp critical
-            {
-                new_frontier->vertices[new_frontier->count++] = i;
+        // Check if any neighbor has the current distance
+        const Vertex* start = incoming_begin(graph, v);
+        const Vertex* end = incoming_end(graph, v);
+        
+        for (const Vertex* neighbor = start; neighbor != end; neighbor++) {
+            if (sol->distances[*neighbor] == current_distance) {
+                sol->distances[v] = current_distance + 1;
+                break; // Move to the next unvisited node after finding a match
             }
-            return;
         }
     }
 }
-
-void bfs_bottom_up(Graph graph, solution *sol)
-{
-    int nodes = graph->num_nodes;
-
-    vertex_set list1, list2;
-    vertex_set_init(&list1, nodes);
-    vertex_set_init(&list2, nodes);
-
-    vertex_set *frontier = &list1;
-    vertex_set *new_frontier = &list2;
-
-    // Initialize all distances to NOT_VISITED
-    #pragma omp parallel for
-    for (int i = 0; i < nodes; i++) {
-        sol->distances[i] = NOT_VISITED_MARKER;
+void bfs_bottom_up(Graph graph, solution *sol) {
+    int num_nodes = graph->num_nodes;
+    
+    // Initialize distances to -1 (indicating unvisited nodes)
+    for (int i = 0; i < num_nodes; i++) {
+        sol->distances[i] = -1;
     }
 
-    // Start BFS from root node
-    frontier->vertices[frontier->count++] = ROOT_NODE_ID;
-    sol->distances[ROOT_NODE_ID] = 0;
+    // Assume the BFS starts from node 0
+    sol->distances[0] = 0;
+    int current_distance = 0;
 
-    while (frontier->count != 0) {
-        vertex_set_clear(new_frontier);
-
-        #pragma omp parallel for
-        for (int i = 0; i < nodes; i++) {
-            if (sol->distances[i] == NOT_VISITED_MARKER) {
-                bottom_up_step(graph, frontier, new_frontier, sol->distances, i);
-            }
+    // Perform BFS layer by layer
+    while (1) {
+        int previous_count = 0;
+        for (int i = 0; i < num_nodes; i++) {
+            if (sol->distances[i] == -1) previous_count++;
         }
 
-        // Swap frontiers
-        vertex_set *tmp = frontier;
-        frontier = new_frontier;
-        new_frontier = tmp;
+        bottom_up_step(graph, sol, current_distance);
+
+        int remaining_count = 0;
+        for (int i = 0; i < num_nodes; i++) {
+            if (sol->distances[i] == -1) remaining_count++;
+        }
+
+        // Stop if no new nodes were visited in this step
+        if (previous_count == remaining_count) {
+            break;
+        }
+
+        current_distance++;
     }
 }
 void bfs_hybrid(Graph graph, solution *sol)
