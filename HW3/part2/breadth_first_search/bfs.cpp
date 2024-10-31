@@ -105,81 +105,75 @@ void bfs_top_down(Graph graph, solution *sol)
         new_frontier = tmp;
     }
 }
-void bottom_up_step(
-    Graph g, 
-    vertex_set *frontier, 
-    vertex_set *new_frontier, 
-    int *distances, 
-    int current_level
-) {
-    // Iterate through all nodes that haven't been visited
-    for (int node = 0; node < g->num_nodes; node++) {
-        if (distances[node] == NOT_VISITED_MARKER) {
-            // Check incoming edges of this unvisited node
-            int start_edge = g->incoming_starts[node];
-            int end_edge = (node == g->num_nodes - 1)
-                ? g->num_edges
-                : g->incoming_starts[node + 1];
 
-            // Check if any of this node's parent nodes are in the current frontier
-            for (int edge_idx = start_edge; edge_idx < end_edge; edge_idx++) {
-                int parent = g->incoming_edges[edge_idx];
-                
-                // Check if the parent is in the current frontier
-                for (int j = 0; j < frontier->count; j++) {
-                    if (frontier->vertices[j] == parent) {
-                        // Add this node to the new frontier
-                        new_frontier->vertices[new_frontier->count++] = node;
-                        distances[node] = current_level;
-                        
-                        // Break out of inner loops once we've found a path
-                        goto next_node;
-                    }
-                }
+void bottom_up_step(
+    Graph g,
+    vertex_set *frontier,
+    vertex_set *new_frontier,
+    int *distances,
+    int i
+    )
+{
+    int start_edge = g->incoming_starts[i];
+    int end_edge = (i == g->num_nodes - 1)
+                ? g->num_edges
+                : g->incoming_starts[i + 1];
+    for (int neighbor = start_edge; neighbor < end_edge; neighbor++) {
+        int parent = g->incoming_edges[neighbor];
+        for (int j = 0; j < frontier->count; j++) {
+            if (frontier->vertices[j] == parent) {
+                new_frontier->vertices[new_frontier->count++] = i;
+                distances[i] = distances[parent] + 1;
+                return;
             }
         }
-        next_node:; // Label to break out of nested loops
     }
 }
 
-void bfs_bottom_up(Graph graph, solution *sol) {
-    int nodes = graph->num_nodes;
-    
-    // Initialize vertex sets
-    vertex_set list1, list2;
+void bfs_bottom_up(Graph graph, solution *sol)
+{
+    int nodes = graph -> num_nodes;
+
+    vertex_set list1;
+    vertex_set list2;
     vertex_set_init(&list1, nodes);
     vertex_set_init(&list2, nodes);
-    
-    // Initial setup
+
     vertex_set *frontier = &list1;
     vertex_set *new_frontier = &list2;
-    
-    // Initialize distances
+
+        
     for (int i = 0; i < nodes; i++)
         sol->distances[i] = NOT_VISITED_MARKER;
-    
-    // Start BFS from root node
     frontier->vertices[frontier->count++] = ROOT_NODE_ID;
     sol->distances[ROOT_NODE_ID] = 0;
+
+    do {
+        for (int i = 0; i < nodes; i++) {
+            // cerr << i << "---test---" << new_frontier->count << endl;
+            if (sol->distances[i] == NOT_VISITED_MARKER ) {
+                bottom_up_step(graph, frontier, new_frontier, sol->distances, i);
+            }
+        }
     
-    int current_level = 1;
-    
-    // Continue until no more nodes can be reached
-    while (frontier->count > 0) {
-        // Clear new frontier before each step
-        vertex_set_clear(new_frontier);
-        
-        // Explore unvisited nodes
-        bottom_up_step(graph, frontier, new_frontier, sol->distances, current_level);
-        
-        // Swap frontiers
         vertex_set *tmp = frontier;
         frontier = new_frontier;
         new_frontier = tmp;
-        
-        // Increment level
-        current_level++;
-    }
+        vertex_set_clear(new_frontier);
+        cerr << frontier->count << endl;
+        cerr.flush();
+    } while(frontier->count != 0);
+    // For PP students:
+    //
+    // You will need to implement the "bottom up" BFS here as
+    // described in the handout.
+    //
+    // As a result of your code's execution, sol.distances should be
+    // correctly populated for all nodes in the graph.
+    //
+    // As was done in the top-down case, you may wish to organize your
+    // code by creating subroutine bottom_up_step() that is called in
+    // each step of the BFS process.
 }
 
 void bfs_hybrid(Graph graph, solution *sol)
