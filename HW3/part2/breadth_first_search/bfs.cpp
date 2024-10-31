@@ -121,9 +121,10 @@ void bottom_up_step(Graph g, solution *sol, int curDis) {
             for (const Vertex* neighbor = start; neighbor != end; neighbor++) {
                 if (sol->distances[*neighbor] == curDis) {
                     sol->distances[i] = curDis + 1;
-                    break; 
+                    goto k;
                 }
             }
+            k:
         }
     }
 }
