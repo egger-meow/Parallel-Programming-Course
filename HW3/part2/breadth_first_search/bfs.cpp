@@ -165,7 +165,7 @@ void bfs_bottom_up(Graph graph, solution *sol) {
 void bfs_hybrid(Graph graph, solution *sol)
 {
     int numNodes = graph -> num_nodes;
-    int threshold  = static_cast <int> (round(sqrt( static_cast <float>(num_nodes))));
+    int threshold  = static_cast <int> (round(sqrt( static_cast <float>(numNodes))));
 
     vertex_set list1;
     vertex_set_init(&list1, graph->num_nodes);
