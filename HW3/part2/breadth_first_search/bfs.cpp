@@ -34,48 +34,26 @@ void top_down_step(
     vertex_set *new_frontier,
     int *distances)
 {
-    // Initialize new_frontier count to zero
-    new_frontier->count = 0;
-
-    #pragma omp parallel
+    #pragma omp parallel for
+    for (int i = 0; i < frontier->count; i++)
     {
-        // Local variable to hold the number of vertices each thread finds
-        int local_count = 0;
 
-        // Allocate a buffer for each thread to store local results
-        int local_vertices[frontier->count];  // Assuming frontier->count is an upper bound
+        int node = frontier->vertices[i];
 
-        #pragma omp for schedule(dynamic)
-        for (int i = 0; i < frontier->count; i++)
+        int start_edge = g->outgoing_starts[node];
+        int end_edge = (node == g->num_nodes - 1)
+                           ? g->num_edges
+                           : g->outgoing_starts[node + 1];
+
+        // attempt to add all neighbors to the new frontier
+        for (int neighbor = start_edge; neighbor < end_edge; neighbor++)
         {
-            int node = frontier->vertices[i];
-            int start_edge = g->outgoing_starts[node];
-            int end_edge = (node == g->num_nodes - 1)
-                               ? g->num_edges
-                               : g->outgoing_starts[node + 1];
+            int outgoing = g->outgoing_edges[neighbor];
 
-            // Iterate through neighbors
-            for (int neighbor = start_edge; neighbor < end_edge; neighbor++)
+            if (__sync_bool_compare_and_swap(&distances[outgoing], NOT_VISITED_MARKER, distances[node] + 1))
             {
-                int outgoing = g->outgoing_edges[neighbor];
-
-                // Check and set distances atomically
-                if (__sync_bool_compare_and_swap(&distances[outgoing], NOT_VISITED_MARKER, distances[node] + 1))
-                {
-                    // Store locally to avoid frequent atomic operations
-                    local_vertices[local_count++] = outgoing;
-                }
-            }
-        }
-
-        // Add the local results to the global new_frontier in a critical section
-        #pragma omp critical
-        {
-            int index = new_frontier->count;
-            new_frontier->count += local_count;
-            for (int j = 0; j < local_count; j++)
-            {
-                new_frontier->vertices[index + j] = local_vertices[j];
+                int index = __sync_fetch_and_add(&new_frontier->count, 1);
+                new_frontier->vertices[index] = outgoing;
             }
         }
     }
