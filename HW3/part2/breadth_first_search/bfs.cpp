@@ -114,9 +114,8 @@ void bfs_top_down(Graph graph, solution *sol)
 
 vertex_set* bottom_up_step(Graph g, int *distances, int curDis, vertex_set *new_frontier) {
     
-    #pragma omp parallel 
-    {
-        #pragma omp for nowait
+
+        #pragma omp parallel for schedule(guided, 64) proc_bind(spread)
         for (int i = 0; i < g->num_nodes; i++) {
             if (distances[i] != NOT_VISITED_MARKER) 
                 continue;
@@ -143,7 +142,7 @@ vertex_set* bottom_up_step(Graph g, int *distances, int curDis, vertex_set *new_
             }
         }
         }
-    }
+    
     return new_frontier;
 }
 
