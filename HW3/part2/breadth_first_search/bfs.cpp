@@ -121,10 +121,18 @@ vertex_set* bottom_up_step(Graph g, int *distances, int curDis, vertex_set *new_
             if (distances[i] != NOT_VISITED_MARKER) 
                 continue;
             
-            const Vertex* start = incoming_begin(g, i);
-            const Vertex* end = incoming_end(g, i);
-            for (const Vertex* neighbor = start; neighbor != end; neighbor++) {
-                if (distances[*neighbor] == curDis) {
+        int start_edge = g->incoming_starts[node];
+        int end_edge = (node == g->num_nodes - 1) ? g->num_edges : g->incoming_starts[node + 1];
+
+        const int CHUNCK = 16;  
+        int num_edges = end_edge - start_edge;
+        
+        #pragma omp simd
+        for (int chunk_start = start_edge; chunk_start < end_edge; chunk_start += CHUNCK)
+        {
+            int chunk_end = (chunk_start + CHUNCK < end_edge) ? chunk_start + CHUNCK : end_edge;
+            for (int neighbor = chunk_start; neighbor < chunk_end; neighbor++) {
+                if (distances[neighbor] == curDis) {
                     if (new_frontier) {
                         int index = __sync_fetch_and_add(&new_frontier->count, 1);
                         new_frontier->vertices[index] = i;
@@ -133,6 +141,7 @@ vertex_set* bottom_up_step(Graph g, int *distances, int curDis, vertex_set *new_
                     break;
                 }
             }
+        }
         }
     }
     return new_frontier;
@@ -171,7 +180,7 @@ void bfs_hybrid(Graph graph, solution *sol)
 {
     int numNodes = graph -> num_nodes;
     int threshold  = static_cast <int> (round(sqrt( static_cast <float>(numNodes))));
-    threshold  = numNodes/40;
+    threshold  = numNodes/30;
 
     vertex_set list1;
     vertex_set list2;
