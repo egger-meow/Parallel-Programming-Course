@@ -121,8 +121,8 @@ vertex_set* bottom_up_step(Graph g, int *distances, int curDis, vertex_set *new_
             if (distances[i] != NOT_VISITED_MARKER) 
                 continue;
             
-        int start_edge = g->incoming_starts[node];
-        int end_edge = (node == g->num_nodes - 1) ? g->num_edges : g->incoming_starts[node + 1];
+        int start_edge = g->incoming_starts[i];
+        int end_edge = (i == g->num_nodes - 1) ? g->num_edges : g->incoming_starts[i + 1];
 
         const int CHUNCK = 16;  
         int num_edges = end_edge - start_edge;
