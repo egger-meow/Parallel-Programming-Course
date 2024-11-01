@@ -107,9 +107,9 @@ void bfs_top_down(Graph graph, solution *sol)
 vertex_set* bottom_up_step(Graph g, int *distances, int curDis) {
     vertex_set* list2 = (vertex_set*) malloc(sizeof(vertex_set));
 
-    vertex_set_init(&list2, g->num_nodes);
+    vertex_set_init(list2, g->num_nodes);
 
-    vertex_set *new_frontier = &list2;
+    vertex_set *new_frontier = list2;
     #pragma omp parallel 
     {
         #pragma omp for nowait
