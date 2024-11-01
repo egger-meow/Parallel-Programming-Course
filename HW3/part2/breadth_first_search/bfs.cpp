@@ -34,19 +34,23 @@ void top_down_step(
     vertex_set *new_frontier,
     int *distances)
 {
-    #pragma omp parallel
-    {
+    #pragma omp parallel for schedule(guided, 64) proc_bind(spread)
     for (int i = 0; i < frontier->count; i++)
     {
 
         int node = frontier->vertices[i];
-
+        #pragma omp prefetch
+        if (i + 1 < frontier->count) {
+            int next_node = frontier->vertices[i + 1];
+            __builtin_prefetch(&g->outgoing_starts[next_node]);
+        }
         int start_edge = g->outgoing_starts[node];
         int end_edge = (node == g->num_nodes - 1)
                            ? g->num_edges
                            : g->outgoing_starts[node + 1];
 
         // attempt to add all neighbors to the new frontier
+        #pragma omp simd
         for (int neighbor = start_edge; neighbor < end_edge; neighbor++)
         {
             int outgoing = g->outgoing_edges[neighbor];
@@ -58,7 +62,7 @@ void top_down_step(
             }
         }
     }
-}
+
 }
 
 // Implements top-down BFS.
@@ -82,7 +86,8 @@ void bfs_top_down(Graph graph, solution *sol)
 
     frontier->vertices[frontier->count++] = ROOT_NODE_ID;
     sol->distances[ROOT_NODE_ID] = 0;
-
+    #pragma omp parallel
+    {
     while (frontier->count != 0)
     {
 
@@ -90,19 +95,28 @@ void bfs_top_down(Graph graph, solution *sol)
         double start_time = CycleTimer::currentSeconds();
 #endif
 
-        vertex_set_clear(new_frontier);
-
-        top_down_step(graph, frontier, new_frontier, sol->distances);
-
+        #pragma omp single
+        {
+            vertex_set_clear(new_frontier);
+        }
+        #pragma omp barrier
+        #pragma omp single
+        {
+            top_down_step(graph, frontier, new_frontier, sol->distances);
+        }
 #ifdef VERBOSE
         double end_time = CycleTimer::currentSeconds();
         printf("frontier=%-10d %.4f sec\n", frontier->count, end_time - start_time);
 #endif
 
         // swap pointers
-        vertex_set *tmp = frontier;
-        frontier = new_frontier;
-        new_frontier = tmp;
+        #pragma omp single
+        {
+            vertex_set *tmp = frontier;
+            frontier = new_frontier;
+            new_frontier = tmp;
+        }
+    }
     }
 }
 
