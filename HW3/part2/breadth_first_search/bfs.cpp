@@ -170,7 +170,7 @@ void bfs_hybrid(Graph graph, solution *sol)
 {
     int numNodes = graph -> num_nodes;
     int threshold  = static_cast <int> (round(sqrt( static_cast <float>(numNodes))));
-    threshold  = 1000000;
+    threshold  = 50000;
 
     vertex_set list1;
     vertex_set list2;
