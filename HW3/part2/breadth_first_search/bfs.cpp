@@ -82,8 +82,7 @@ void bfs_top_down(Graph graph, solution *sol)
 
     frontier->vertices[frontier->count++] = ROOT_NODE_ID;
     sol->distances[ROOT_NODE_ID] = 0;
-    #pragma omp parallel
-    {
+
     while (frontier->count != 0)
     {
 
@@ -91,29 +90,24 @@ void bfs_top_down(Graph graph, solution *sol)
         double start_time = CycleTimer::currentSeconds();
 #endif
 
-        #pragma omp single
-        {
+
             vertex_set_clear(new_frontier);
-        }
-        #pragma omp barrier
-        #pragma omp single
-        {
+
             top_down_step(graph, frontier, new_frontier, sol->distances);
-        }
+        
 #ifdef VERBOSE
         double end_time = CycleTimer::currentSeconds();
         printf("frontier=%-10d %.4f sec\n", frontier->count, end_time - start_time);
 #endif
 
         // swap pointers
-        #pragma omp single
-        {
+
             vertex_set *tmp = frontier;
             frontier = new_frontier;
             new_frontier = tmp;
-        }
+        
     }
-    }
+    
 }
 
 vertex_set* bottom_up_step(Graph g, int *distances, int curDis, vertex_set *new_frontier) {
