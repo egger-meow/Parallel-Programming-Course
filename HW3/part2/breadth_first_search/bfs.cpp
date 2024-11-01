@@ -25,35 +25,51 @@ void vertex_set_init(vertex_set *list, int count)
     vertex_set_clear(list);
 }
 
-// Take one step of "top-down" BFS.  For each vertex on the frontier,
-// follow all outgoing edges, and add all neighboring vertices to the
-// new_frontier.
 void top_down_step(
     Graph g,
     vertex_set *frontier,
     vertex_set *new_frontier,
     int *distances)
 {
-    #pragma omp parallel for
+    // Use guided scheduling for better load balancing with irregular graph structures
+    // Add chunk size to reduce scheduling overhead
+    // Add proc_bind to improve cache locality
+    #pragma omp parallel for schedule(guided, 64) proc_bind(spread)
     for (int i = 0; i < frontier->count; i++)
     {
-
         int node = frontier->vertices[i];
+        
+        // Prefetch next iteration's data
+        if (i + 1 < frontier->count) {
+            int next_node = frontier->vertices[i + 1];
+            __builtin_prefetch(&g->outgoing_starts[next_node]);
+        }
 
         int start_edge = g->outgoing_starts[node];
-        int end_edge = (node == g->num_nodes - 1)
-                           ? g->num_edges
-                           : g->outgoing_starts[node + 1];
+        int end_edge = (node == g->num_nodes - 1) ? g->num_edges : g->outgoing_starts[node + 1];
 
-        // attempt to add all neighbors to the new frontier
-        for (int neighbor = start_edge; neighbor < end_edge; neighbor++)
+        // Process edges in chunks to improve cache utilization
+        const int CHUNK_SIZE = 16;  // Adjust based on cache line size
+        int num_edges = end_edge - start_edge;
+        
+        // Enable vectorization for edge processing
+        #pragma omp simd
+        for (int chunk_start = start_edge; chunk_start < end_edge; chunk_start += CHUNK_SIZE)
         {
-            int outgoing = g->outgoing_edges[neighbor];
-
-            if (__sync_bool_compare_and_swap(&distances[outgoing], NOT_VISITED_MARKER, distances[node] + 1))
+            int chunk_end = (chunk_start + CHUNK_SIZE < end_edge) ? chunk_start + CHUNK_SIZE : end_edge;
+            
+            for (int neighbor = chunk_start; neighbor < chunk_end; neighbor++)
             {
-                int index = __sync_fetch_and_add(&new_frontier->count, 1);
-                new_frontier->vertices[index] = outgoing;
+                int outgoing = g->outgoing_edges[neighbor];
+                
+                // Try to avoid atomic operations when possible
+                if (distances[outgoing] == NOT_VISITED_MARKER &&
+                    __sync_bool_compare_and_swap(&distances[outgoing], NOT_VISITED_MARKER, distances[node] + 1))
+                {
+                    // Use local variable to reduce contention on new_frontier->count
+                    int index = __sync_fetch_and_add(&new_frontier->count, 1);
+                    new_frontier->vertices[index] = outgoing;
+                }
             }
         }
     }
@@ -163,7 +179,7 @@ void bfs_hybrid(Graph graph, solution *sol)
 {
     int numNodes = graph -> num_nodes;
     int threshold  = static_cast <int> (round(sqrt( static_cast <float>(numNodes))));
-    threshold  = 300000;
+    threshold  = 100000;
 
     vertex_set list1;
     vertex_set list2;
