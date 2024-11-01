@@ -34,16 +34,12 @@ void top_down_step(
     vertex_set *new_frontier,
     int *distances)
 {
-    #pragma omp parallel for schedule(guided, 64) proc_bind(spread)
+    #pragma omp parallel for 
     for (int i = 0; i < frontier->count; i++)
     {
 
         int node = frontier->vertices[i];
-        #pragma omp prefetch
-        if (i + 1 < frontier->count) {
-            int next_node = frontier->vertices[i + 1];
-            __builtin_prefetch(&g->outgoing_starts[next_node]);
-        }
+
         int start_edge = g->outgoing_starts[node];
         int end_edge = (node == g->num_nodes - 1)
                            ? g->num_edges
