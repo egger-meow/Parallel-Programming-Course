@@ -113,6 +113,7 @@ void bfs_top_down(Graph graph, solution *sol)
 }
 
 vertex_set* bottom_up_step(Graph g, int *distances, int curDis, vertex_set *new_frontier) {
+    
     #pragma omp parallel 
     {
         #pragma omp for nowait
@@ -170,7 +171,7 @@ void bfs_hybrid(Graph graph, solution *sol)
 {
     int numNodes = graph -> num_nodes;
     int threshold  = static_cast <int> (round(sqrt( static_cast <float>(numNodes))));
-    threshold  = numNodes/30;
+    threshold  = numNodes/40;
 
     vertex_set list1;
     vertex_set list2;
