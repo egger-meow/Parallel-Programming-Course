@@ -107,7 +107,7 @@ void bfs_top_down(Graph graph, solution *sol)
 vertex_set* bottom_up_step(Graph g, int *distances, int curDis) {
     vertex_set list2;
 
-    vertex_set_init(&list2, graph->num_nodes);
+    vertex_set_init(&list2, g->num_nodes);
 
     vertex_set *new_frontier = &list2;
     #pragma omp parallel 
@@ -147,7 +147,7 @@ void bfs_bottom_up(Graph graph, solution *sol) {
     while (1) {
         int preCount = remainCount;
 
-        bottom_up_step(graph, sol, curDis);
+        bottom_up_step(graph, sol->distances, curDis);
 
         remainCount = 0;
         #pragma omp parallel for reduction(+:remainCount)
@@ -165,12 +165,13 @@ void bfs_bottom_up(Graph graph, solution *sol) {
 void bfs_hybrid(Graph graph, solution *sol)
 {
     int numNodes = graph -> num_nodes;
-    int threshold  = static_cast <int> (round(sqrt(num_nodes)));
+    int threshold  = static_cast <int> (round(sqrt( static_cast <float>(num_nodes))));
 
     vertex_set list1;
     vertex_set_init(&list1, graph->num_nodes);
 
     vertex_set *frontier = &list1;
+    vertex_set *new_frontier;
 
     #pragma omp parallel for
     for (int i = 0; i < graph->num_nodes; i++)
@@ -183,7 +184,6 @@ void bfs_hybrid(Graph graph, solution *sol)
 
     while (frontier->count != 0) {
         bool useBottomUp = frontier->count > threshold;
-        vertex_set *new_frontier;
         if (useBottomUp) {
             new_frontier = bottom_up_step(graph, sol -> distances, curDis);
 
