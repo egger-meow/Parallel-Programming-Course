@@ -111,74 +111,26 @@ void bfs_top_down(Graph graph, solution *sol)
         new_frontier = tmp;
     }
 }
+
 vertex_set* bottom_up_step(Graph g, int *distances, int curDis, vertex_set *new_frontier) {
-    // Use guided scheduling for better load balancing
-    // Use larger chunk size to reduce scheduling overhead
-    // Add proc_bind for better thread distribution
-    #pragma omp parallel
+    #pragma omp parallel 
     {
-        // Thread-local buffer to reduce atomic operations
-        int local_buffer[1024];  // Adjust size based on your needs
-        int local_count = 0;
-        
-        #pragma omp for schedule(guided, 128) proc_bind(spread) nowait
+        #pragma omp for nowait
         for (int i = 0; i < g->num_nodes; i++) {
             if (distances[i] != NOT_VISITED_MARKER) 
                 continue;
             
             const Vertex* start = incoming_begin(g, i);
             const Vertex* end = incoming_end(g, i);
-            
-            // Prefetch next node's incoming edges
-            if (i + 1 < g->num_nodes) {
-                __builtin_prefetch(incoming_begin(g, i + 1));
-            }
-            
-            // Process edges in chunks for better cache utilization
-            const int CHUNK_SIZE = 16;
-            const Vertex* chunk_end;
-            
-            // Enable vectorization for edge checking
-            #pragma omp simd reduction(||:found)
-            for (const Vertex* chunk_start = start; chunk_start < end; chunk_start += CHUNK_SIZE) {
-                bool found = false;
-                chunk_end = (chunk_start + CHUNK_SIZE < end) ? chunk_start + CHUNK_SIZE : end;
-                
-                // Check this chunk of neighbors
-                for (const Vertex* neighbor = chunk_start; neighbor < chunk_end && !found; neighbor++) {
-                    // Prefetch next neighbor's distance
-                    if (neighbor + 1 < chunk_end) {
-                        __builtin_prefetch(&distances[*(neighbor + 1)]);
-                    }
-                    
-                    if (distances[*neighbor] == curDis) {
-                        found = true;
-                    }
-                }
-                
-                if (found) {
+            for (const Vertex* neighbor = start; neighbor != end; neighbor++) {
+                if (distances[*neighbor] == curDis) {
                     if (new_frontier) {
-                        // Buffer locally first
-                        local_buffer[local_count++] = i;
-                        if (local_count == 1024) {  // Buffer is full
-                            // Batch update to new_frontier
-                            int index = __sync_fetch_and_add(&new_frontier->count, local_count);
-                            memcpy(&new_frontier->vertices[index], local_buffer, local_count * sizeof(int));
-                            local_count = 0;
-                        }
+                        int index = __sync_fetch_and_add(&new_frontier->count, 1);
+                        new_frontier->vertices[index] = i;
                     }
                     distances[i] = curDis + 1;
                     break;
                 }
-            }
-        }
-        
-        // Flush remaining buffer
-        if (new_frontier && local_count > 0) {
-            #pragma omp critical
-            {
-                int index = __sync_fetch_and_add(&new_frontier->count, local_count);
-                memcpy(&new_frontier->vertices[index], local_buffer, local_count * sizeof(int));
             }
         }
     }
@@ -218,7 +170,7 @@ void bfs_hybrid(Graph graph, solution *sol)
 {
     int numNodes = graph -> num_nodes;
     int threshold  = static_cast <int> (round(sqrt( static_cast <float>(numNodes))));
-    threshold  = 100000;
+    threshold  = 300000;
 
     vertex_set list1;
     vertex_set list2;
