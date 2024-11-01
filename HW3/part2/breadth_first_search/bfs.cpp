@@ -163,7 +163,7 @@ void bfs_hybrid(Graph graph, solution *sol)
 {
     int numNodes = graph -> num_nodes;
     int threshold  = static_cast <int> (round(sqrt( static_cast <float>(numNodes))));
-    threshold = 99999999;
+
     vertex_set list1;
     vertex_set list2;
     vertex_set_init(&list1, graph->num_nodes);
@@ -180,14 +180,28 @@ void bfs_hybrid(Graph graph, solution *sol)
     sol->distances[ROOT_NODE_ID] = 0;
 
     int curDis = 0;
+    int remainCount = graph->num_nodes - 1;
 
     while (frontier->count != 0) {
         bool useBottomUp = frontier->count > threshold;
         vertex_set_clear(new_frontier);
 
         if (useBottomUp) {
+            int preCount = 0;
+            int remainCount = 0;
+
+            #pragma omp parallel for reduction(+:preCount)
+            for (int i = 0; i < graph->num_nodes; i++) 
+                if (sol->distances[i] == -1) preCount++;
+            
             bottom_up_step(graph, sol -> distances, curDis, new_frontier);
 
+            #pragma omp parallel for reduction(+:remainCount)
+            for (int i = 0; i < graph->num_nodes; i++) 
+                if (sol->distances[i] == -1) remainCount++;
+                
+            if (preCount == remainCount) 
+                break;
         } else {
             top_down_step(graph, frontier, new_frontier, sol -> distances);
         }
