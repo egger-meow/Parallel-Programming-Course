@@ -31,15 +31,11 @@ void top_down_step(
     vertex_set *new_frontier,
     int *distances)
 {
-    // Use guided scheduling for better load balancing with irregular graph structures
-    // Add chunk size to reduce scheduling overhead
-    // Add proc_bind to improve cache locality
     #pragma omp parallel for schedule(guided, 64) proc_bind(spread)
     for (int i = 0; i < frontier->count; i++)
     {
         int node = frontier->vertices[i];
         
-        // Prefetch next iteration's data
         if (i + 1 < frontier->count) {
             int next_node = frontier->vertices[i + 1];
             __builtin_prefetch(&g->outgoing_starts[next_node]);
@@ -48,25 +44,21 @@ void top_down_step(
         int start_edge = g->outgoing_starts[node];
         int end_edge = (node == g->num_nodes - 1) ? g->num_edges : g->outgoing_starts[node + 1];
 
-        // Process edges in chunks to improve cache utilization
-        const int CHUNK_SIZE = 16;  // Adjust based on cache line size
+        const int CHUNCK = 16;  
         int num_edges = end_edge - start_edge;
         
-        // Enable vectorization for edge processing
         #pragma omp simd
-        for (int chunk_start = start_edge; chunk_start < end_edge; chunk_start += CHUNK_SIZE)
+        for (int chunk_start = start_edge; chunk_start < end_edge; chunk_start += CHUNCK)
         {
-            int chunk_end = (chunk_start + CHUNK_SIZE < end_edge) ? chunk_start + CHUNK_SIZE : end_edge;
+            int chunk_end = (chunk_start + CHUNCK < end_edge) ? chunk_start + CHUNCK : end_edge;
             
             for (int neighbor = chunk_start; neighbor < chunk_end; neighbor++)
             {
                 int outgoing = g->outgoing_edges[neighbor];
                 
-                // Try to avoid atomic operations when possible
                 if (distances[outgoing] == NOT_VISITED_MARKER &&
                     __sync_bool_compare_and_swap(&distances[outgoing], NOT_VISITED_MARKER, distances[node] + 1))
                 {
-                    // Use local variable to reduce contention on new_frontier->count
                     int index = __sync_fetch_and_add(&new_frontier->count, 1);
                     new_frontier->vertices[index] = outgoing;
                 }
@@ -119,27 +111,74 @@ void bfs_top_down(Graph graph, solution *sol)
         new_frontier = tmp;
     }
 }
-
 vertex_set* bottom_up_step(Graph g, int *distances, int curDis, vertex_set *new_frontier) {
-    #pragma omp parallel 
+    // Use guided scheduling for better load balancing
+    // Use larger chunk size to reduce scheduling overhead
+    // Add proc_bind for better thread distribution
+    #pragma omp parallel
     {
-        #pragma omp for nowait
+        // Thread-local buffer to reduce atomic operations
+        int local_buffer[1024];  // Adjust size based on your needs
+        int local_count = 0;
+        
+        #pragma omp for schedule(guided, 128) proc_bind(spread) nowait
         for (int i = 0; i < g->num_nodes; i++) {
             if (distances[i] != NOT_VISITED_MARKER) 
                 continue;
             
             const Vertex* start = incoming_begin(g, i);
             const Vertex* end = incoming_end(g, i);
-            bool found = 0;
-            for (const Vertex* neighbor = start; neighbor != end; neighbor++) {
-                if (distances[*neighbor] == curDis) {
+            
+            // Prefetch next node's incoming edges
+            if (i + 1 < g->num_nodes) {
+                __builtin_prefetch(incoming_begin(g, i + 1));
+            }
+            
+            // Process edges in chunks for better cache utilization
+            const int CHUNK_SIZE = 16;
+            const Vertex* chunk_end;
+            
+            // Enable vectorization for edge checking
+            #pragma omp simd reduction(||:found)
+            for (const Vertex* chunk_start = start; chunk_start < end; chunk_start += CHUNK_SIZE) {
+                bool found = false;
+                chunk_end = (chunk_start + CHUNK_SIZE < end) ? chunk_start + CHUNK_SIZE : end;
+                
+                // Check this chunk of neighbors
+                for (const Vertex* neighbor = chunk_start; neighbor < chunk_end && !found; neighbor++) {
+                    // Prefetch next neighbor's distance
+                    if (neighbor + 1 < chunk_end) {
+                        __builtin_prefetch(&distances[*(neighbor + 1)]);
+                    }
+                    
+                    if (distances[*neighbor] == curDis) {
+                        found = true;
+                    }
+                }
+                
+                if (found) {
                     if (new_frontier) {
-                        int index = __sync_fetch_and_add(&new_frontier->count, 1);
-                        new_frontier->vertices[index] = i;
+                        // Buffer locally first
+                        local_buffer[local_count++] = i;
+                        if (local_count == 1024) {  // Buffer is full
+                            // Batch update to new_frontier
+                            int index = __sync_fetch_and_add(&new_frontier->count, local_count);
+                            memcpy(&new_frontier->vertices[index], local_buffer, local_count * sizeof(int));
+                            local_count = 0;
+                        }
                     }
                     distances[i] = curDis + 1;
                     break;
                 }
+            }
+        }
+        
+        // Flush remaining buffer
+        if (new_frontier && local_count > 0) {
+            #pragma omp critical
+            {
+                int index = __sync_fetch_and_add(&new_frontier->count, local_count);
+                memcpy(&new_frontier->vertices[index], local_buffer, local_count * sizeof(int));
             }
         }
     }
