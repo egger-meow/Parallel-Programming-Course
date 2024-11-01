@@ -34,7 +34,8 @@ void top_down_step(
     vertex_set *new_frontier,
     int *distances)
 {
-    #pragma omp parallel for
+    #pragma omp parallel
+    {
     for (int i = 0; i < frontier->count; i++)
     {
 
@@ -57,6 +58,7 @@ void top_down_step(
             }
         }
     }
+}
 }
 
 // Implements top-down BFS.
@@ -162,7 +164,7 @@ void bfs_bottom_up(Graph graph, solution *sol) {
 void bfs_hybrid(Graph graph, solution *sol)
 {
     int numNodes = graph -> num_nodes;
-    int threshold  = static_cast <int> (round(sqrt( static_cast <float>(numNodes))));
+    int threshold  = static_cast <int> (round(sqrt( static_cast <float>(numNodes))))/30;
 
     vertex_set list1;
     vertex_set list2;
@@ -199,7 +201,7 @@ void bfs_hybrid(Graph graph, solution *sol)
             #pragma omp parallel for reduction(+:remainCount)
             for (int i = 0; i < graph->num_nodes; i++) 
                 if (sol->distances[i] == -1) remainCount++;
-                
+
             if (preCount == remainCount) 
                 break;
         } else {
