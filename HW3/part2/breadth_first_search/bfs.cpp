@@ -36,10 +36,10 @@ void top_down_step(
     {
         int node = frontier->vertices[i];
         
-        // if (i + 1 < frontier->count) {
-        //     int next_node = frontier->vertices[i + 1];
-        //     __builtin_prefetch(&g->outgoing_starts[next_node]);
-        // }
+        if (i + 1 < frontier->count) {
+            int next_node = frontier->vertices[i + 1];
+            __builtin_prefetch(&g->outgoing_starts[next_node]);
+        }
 
         int start_edge = g->outgoing_starts[node];
         int end_edge = (node == g->num_nodes - 1) ? g->num_edges : g->outgoing_starts[node + 1];
