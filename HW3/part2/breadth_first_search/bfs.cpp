@@ -114,24 +114,17 @@ void bfs_top_down(Graph graph, solution *sol)
 
 vertex_set* bottom_up_step(Graph g, int *distances, int curDis, vertex_set *new_frontier) {
     
-
-        #pragma omp parallel for schedule(guided, 64) proc_bind(spread)
+    #pragma omp parallel 
+    {
+        #pragma omp for nowait
         for (int i = 0; i < g->num_nodes; i++) {
             if (distances[i] != NOT_VISITED_MARKER) 
                 continue;
             
-        int start_edge = g->incoming_starts[i];
-        int end_edge = (i == g->num_nodes - 1) ? g->num_edges : g->incoming_starts[i + 1];
-
-        const int CHUNCK = 16;  
-        int num_edges = end_edge - start_edge;
-        
-        #pragma omp simd
-        for (int chunk_start = start_edge; chunk_start < end_edge; chunk_start += CHUNCK)
-        {
-            int chunk_end = (chunk_start + CHUNCK < end_edge) ? chunk_start + CHUNCK : end_edge;
-            for (int neighbor = chunk_start; neighbor < chunk_end; neighbor++) {
-                if (distances[neighbor] == curDis) {
+            const Vertex* start = incoming_begin(g, i);
+            const Vertex* end = incoming_end(g, i);
+            for (const Vertex* neighbor = start; neighbor != end; neighbor++) {
+                if (distances[*neighbor] == curDis) {
                     if (new_frontier) {
                         int index = __sync_fetch_and_add(&new_frontier->count, 1);
                         new_frontier->vertices[index] = i;
@@ -141,8 +134,7 @@ vertex_set* bottom_up_step(Graph g, int *distances, int curDis, vertex_set *new_
                 }
             }
         }
-        }
-    
+    }
     return new_frontier;
 }
 
