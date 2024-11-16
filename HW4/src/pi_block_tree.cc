@@ -45,6 +45,7 @@ int main(int argc, char **argv)
     int counter = 1;
     while (remain > 0) {
         if (remain % 2 == 1) {
+            printf("%d %d\n", world_rank, counter);
             MPI_Send(&countLocal, 1, MPI_LONG_LONG_INT, world_rank - counter, 0, MPI_COMM_WORLD);
             break;
         } else {
