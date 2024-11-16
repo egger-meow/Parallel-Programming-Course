@@ -49,7 +49,7 @@ int main(int argc, char **argv)
         lli count;
 
         for (int i = 1; i < world_size; i++) {
-            MPI_Recv(&recv_count, 1, MPI_LONG_LONG_INT, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(&count, 1, MPI_LONG_LONG_INT, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             counTotal += count;
         }
         pi_result = 4.0 * (double) counTotal / (double) tosses;
