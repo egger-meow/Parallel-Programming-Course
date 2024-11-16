@@ -43,10 +43,10 @@ int main(int argc, char **argv)
     lln count;
 
     int counter = 1;
-    while (remain > 1) {
+    while (remain > 0) {
         if (remain % 2 == 1) {
             MPI_Send(&countLocal, 1, MPI_LONG_LONG_INT, world_rank - counter, 0, MPI_COMM_WORLD);
-            // break;
+            break;
         } else {
             MPI_Recv(&count, 1, MPI_LONG_LONG_INT, world_rank + counter, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             counTotal += count;
