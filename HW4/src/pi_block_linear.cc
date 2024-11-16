@@ -21,7 +21,7 @@ int main(int argc, char **argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
     lli tossesLocal = tosses / world_size;
-    lli remainder = tossed % world_size;
+    lli remainder = tosses % world_size;
     if (world_rank < remainder) 
         tossesLocal += 1;
 
