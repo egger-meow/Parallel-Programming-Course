@@ -39,12 +39,13 @@ int main(int argc, char **argv)
     }
 
     int remain = world_size - world_rank;
+    remain = world_rank == 0 ? remain/2 : remain;
     lln counTotal = countLocal;
     lln count;
 
     int counter = 1;
     while (remain > 0) {
-        if (remain % 2 == 1 && world_rank != 0) {
+        if (remain % 2 == 1 ) {
             MPI_Send(&countLocal, 1, MPI_LONG_LONG_INT, world_rank-counter, 0, MPI_COMM_WORLD);
             break;
         } else {
