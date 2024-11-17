@@ -48,7 +48,7 @@ int main(int argc, char **argv)
         // Use MPI_Irecv, MPI_Wait or MPI_Waitall.
         int numWorkers = world_size - 1;
 
-        MPI_Request requests[numWorkers] = (MPI_Request *) malloc(numWorkers * sizeof(MPI_Request));
+        MPI_Request *requests = (MPI_Request *) malloc(numWorkers * sizeof(MPI_Request));
         lln *recvCount = (lln *) malloc(numWorkers  * sizeof(lln));
 
         for (int i = 0; i < numWorkers; i++) {
