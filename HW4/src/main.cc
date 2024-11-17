@@ -221,7 +221,7 @@ int main (int argc, const char **argv) {
 
     double end_time = MPI_Wtime();
     MPI_Finalize();
-    // std::cout << "MPI running time: " << end_time - start_time << " Seconds\n";
+    std::cout << "MPI running time: " << end_time - start_time << " Seconds\n";
 
     return 0;
 }
