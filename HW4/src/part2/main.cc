@@ -1,11 +1,19 @@
-// matmul.cc
 #include <mpi.h>
 #include <fstream>
 #include <iostream>
-#include <cstdlib>
-#include <cstdio>
 
-// Function to read matrices A and B from the input file
+// *********************************************
+// ** ATTENTION: YOU CANNOT MODIFY THIS FILE. **
+// *********************************************
+
+// Read size of matrix_a and matrix_b (n, m, l) and whole data of matrixes from in
+//
+// in:        input stream of the matrix file
+// n_ptr:     pointer to n
+// m_ptr:     pointer to m
+// l_ptr:     pointer to l
+// a_mat_ptr: pointer to matrix a (a should be a continuous memory space for placing n * m elements of int)
+// b_mat_ptr: pointer to matrix b (b should be a continuous memory space for placing m * l elements of int)
 void construct_matrices(std::ifstream &in, int *n_ptr, int *m_ptr, int *l_ptr,
                         int **a_mat_ptr, int **b_mat_ptr) {
     // Read dimensions n, m, l
@@ -34,7 +42,13 @@ void construct_matrices(std::ifstream &in, int *n_ptr, int *m_ptr, int *l_ptr,
     }
 }
 
-// Function to perform matrix multiplication using MPI
+// Just matrix multiplication (your should output the result in this function)
+// 
+// n:     row number of matrix a
+// m:     col number of matrix a / row number of matrix b
+// l:     col number of matrix b
+// a_mat: a continuous memory placing n * m elements of int
+// b_mat: a continuous memory placing m * l elements of int
 void matrix_multiply(const int n, const int m, const int l,
                      const int *a_mat, const int *b_mat) {
     int world_rank, world_size;
@@ -126,7 +140,7 @@ void matrix_multiply(const int n, const int m, const int l,
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
 
-        for(int i = 0; i < world_size; ++i){
+        for(int i = 0; i < world_size; i++){
             recvcounts_C[i] = (i < remainder) ? (rows_per_proc + 1) * l : rows_per_proc * l;
             displs_C[i] = (i < remainder) ? i * (rows_per_proc + 1) * l : (remainder * (rows_per_proc + 1) + (i - remainder) * rows_per_proc) * l;
         }
@@ -168,8 +182,31 @@ void matrix_multiply(const int n, const int m, const int l,
     // Note: All allocations are freed appropriately
 }
 
-// Function to free the allocated memory for matrices A and B
+// Remember to release your allocated memory
 void destruct_matrices(int *a_mat, int *b_mat) {
     free(a_mat);
     free(b_mat);
+}
+
+int main (int argc, const char **argv) {
+    if (argc != 2) {
+        std::cerr << "Usage: " << argv[0] << " FILE\n";
+        return 1;
+    }
+
+    MPI_Init(NULL, NULL);
+    double start_time = MPI_Wtime();
+
+    int n, m, l;
+    int *a_mat, *b_mat;
+    std::ifstream in(argv[1]);
+    construct_matrices(in, &n, &m, &l, &a_mat, &b_mat);
+    matrix_multiply(n, m, l, a_mat, b_mat);
+    destruct_matrices(a_mat, b_mat);
+
+    double end_time = MPI_Wtime();
+    MPI_Finalize();
+    std::cout << "MPI running time: " << end_time - start_time << " Seconds\n";
+
+    return 0;
 }

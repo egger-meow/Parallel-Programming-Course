@@ -3,7 +3,7 @@
 CXX = mpicxx
 CXXFLAGS = -O3 -std=c++11
 TARGET = matmul
-OBJECTS = main.o matmul.o
+OBJECTS = main.o
 
 all: $(TARGET)
 
@@ -12,9 +12,6 @@ $(TARGET): $(OBJECTS)
 
 main.o: main.cc
 	$(CXX) $(CXXFLAGS) -c main.cc
-
-matmul.o: matmul.cc
-	$(CXX) $(CXXFLAGS) -c matmul.cc
 
 clean:
 	rm -f $(TARGET) $(OBJECTS)
