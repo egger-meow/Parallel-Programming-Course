@@ -51,19 +51,23 @@ int main(int argc, char **argv)
     {
         MPI_Win_create(counTotal, 0, sizeof(lln), MPI_INFO_NULL, MPI_COMM_WORLD, &win);
         // Workers
-    }
-
-    MPI_Win_fence(0, win);
-
-    if (world_rank != 0) {
-        // Workers accumulate their countLocal to master's total_count
+        MPI_Win_fence(0, win);
         MPI_Accumulate(&countLocal, 1, MPI_LONG_LONG_INT, 0, 0, 1, MPI_LONG_LONG_INT, MPI_SUM, win);
+    
+        MPI_Win_fence(0, win);
     }
 
-    // End epoch
-    MPI_Win_fence(0, win);
+    // MPI_Win_fence(0, win);
 
-    MPI_Win_free(&win);
+    // if (world_rank != 0) {
+    //     // Workers accumulate their countLocal to master's total_count
+    //     MPI_Accumulate(&countLocal, 1, MPI_LONG_LONG_INT, 0, 0, 1, MPI_LONG_LONG_INT, MPI_SUM, win);
+    // }
+
+    // // End epoch
+    // MPI_Win_fence(0, win);
+
+    // MPI_Win_free(&win);
 
     if (world_rank == 0)
     {
