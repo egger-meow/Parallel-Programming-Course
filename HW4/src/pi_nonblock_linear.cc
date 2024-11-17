@@ -49,7 +49,7 @@ int main(int argc, char **argv)
         int numWorkers = world_size - 1;
 
         MPI_Request requests[] = (MPI_Request *) malloc(numWorkers * sizeof(MPI_Request));
-        lln *recvCount = (lln *) malloc(num_workers * sizeof(lln));
+        lln *recvCount = (lln *) malloc(numWorkers  * sizeof(lln));
 
         for (int i = 0; i < numWorkers; i++) {
             MPI_Irecv(&recvCount[i], 1, MPI_LONG_LONG_INT, i + 1, 0, MPI_COMM_WORLD, &requests[i]);
