@@ -1,10 +1,8 @@
-
 #include <mpi.h>
 #include <fstream>
 #include <iostream>
 #include <cstdlib>
 #include <cstdio>
-#include <cstring>
 
 // *********************************************
 // ** ATTENTION: YOU CAN MODIFY THIS FILE.    **
@@ -18,8 +16,6 @@
 // l_ptr:     pointer to l
 // a_mat_ptr: pointer to matrix a (a should be a continuous memory space for placing n * m elements of int)
 // b_mat_ptr: pointer to matrix b (b should be a continuous memory space for placing m * l elements of int)
-// matmul.cc
-// Function to read matrices A and B from the input file
 void construct_matrices(std::ifstream &in, int *n_ptr, int *m_ptr, int *l_ptr,
                         int **a_mat_ptr, int **b_mat_ptr) {
     // Read dimensions n, m, l
@@ -48,7 +44,13 @@ void construct_matrices(std::ifstream &in, int *n_ptr, int *m_ptr, int *l_ptr,
     }
 }
 
-// Function to perform matrix multiplication using MPI
+// Just matrix multiplication (your should output the result in this function)
+//
+// n:     row number of matrix a
+// m:     col number of matrix a / row number of matrix b
+// l:     col number of matrix b
+// a_mat: a continuous memory placing n * m elements of int
+// b_mat: a continuous memory placing m * l elements of int
 void matrix_multiply(const int n, const int m, const int l,
                      const int *a_mat, const int *b_mat) {
     int world_rank, world_size;
@@ -180,6 +182,7 @@ void matrix_multiply(const int n, const int m, const int l,
                 }
             }
         }
+        // Free allocated memory for C, recvcounts_C, and displs_C
         free(C);
         free(recvcounts_C);
         free(displs_C);
