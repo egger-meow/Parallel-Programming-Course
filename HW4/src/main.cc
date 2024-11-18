@@ -219,9 +219,14 @@ int main (int argc, const char **argv) {
     matrix_multiply(n, m, l, a_mat, b_mat);
     destruct_matrices(a_mat, b_mat);
 
-    double end_time = MPI_Wtime();
-    MPI_Finalize();
-    std::cout << "MPI running time: " << end_time - start_time << " Seconds\n";
+    MPI_Barrier(MPI_COMM_WORLD); // Added barrier
 
+    double end_time = MPI_Wtime();
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if(rank == 0)
+        std::cout << "MPI running time: " << end_time - start_time << " Seconds\n";
+
+    MPI_Finalize();
     return 0;
 }
