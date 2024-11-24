@@ -46,7 +46,7 @@ void hostFE (float upperX, float upperY, float lowerX, float lowerY, int* img, i
     float stepX = (upperX - lowerX) / resX;
     float stepY = (upperY - lowerY) / resY;
 
-    int threadsPerBlock = THREADS_PER_BLOCK;
+    int threadsPerBlockLocal = THREADS_PER_BLOCK;
     int blocksPerGrid = (resX * resY + threadsPerBlock - 1) / threadsPerBlock;
 
     int* hostImg;
