@@ -12,21 +12,25 @@ __device__ int mandel(float c_re, float c_im, int maxIterations) {
 
         float new_re = z_re * z_re - z_im * z_im;
         float new_im = 2.f * z_re * z_im;
-        z_re = c_re + new_re + 12;
+        z_re = c_re + new_re;
         z_im = c_im + new_im;
     }
     return i;
 }
 
+// CUDA Kernel: Each thread computes one pixel
 __global__ void mandelKernel(float lowerX, float lowerY, float stepX, float stepY, 
-                             int maxIterations, int* img, int resX, int resY) {
-    // Calculate the global thread ID
+                             int maxIterations, int* img, size_t pitch, int resX, int resY) {
+    // Calculate the global thread index
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
+    // Calculate total number of pixels
+    int totalPixels = resX * resY;
+
     // Ensure the thread ID is within the bounds of the image
-    if (idx < resX * resY) {
-        int x = idx % resX;
-        int y = idx / resX;
+    if (idx < totalPixels) {
+        int x = idx % resX;      // Column index
+        int y = idx / resX;      // Row index
 
         // Map pixel position to complex plane
         float c_re = lowerX + x * stepX;
@@ -35,8 +39,9 @@ __global__ void mandelKernel(float lowerX, float lowerY, float stepX, float step
         // Compute Mandelbrot iterations
         int iter = mandel(c_re, c_im, maxIterations);
 
-        // Store the result in the image array
-        img[y * resX + x] = iter;
+        // Calculate the address considering the pitch
+        int* row = (int*)((char*)img + y * pitch);
+        row[x] = iter;
     }
 }
 
@@ -47,33 +52,36 @@ void hostFE(float upperX, float upperY, float lowerX, float lowerY,
     float stepX = (upperX - lowerX) / resX;
     float stepY = (upperY - lowerY) / resY;
 
-    // Calculate the size of the image in bytes
-    size_t size = resX * resY * sizeof(int);
+    // Calculate the total number of pixels
+    size_t totalPixels = resX * resY;
 
-    // Allocate host memory using malloc
-    int* host_img = (int*)malloc(size);
-    if (host_img == NULL) {
-        fprintf(stderr, "Failed to allocate host memory\n");
-        exit(EXIT_FAILURE);
-    }
+    // Define block and grid sizes
+    int threadsPerBlockLocal = THREADS_PER_BLOCK;
+    int blocksPerGrid = (totalPixels + threadsPerBlockLocal - 1) / threadsPerBlockLocal;
 
-    // Allocate device memory using cudaMalloc
-    int* dev_img;
-    cudaError_t err = cudaMalloc((void**)&dev_img, size);
+    // Allocate pinned host memory using cudaHostAlloc
+    int* host_img;
+    cudaError_t err = cudaHostAlloc((void**)&host_img, resX * resY * sizeof(int), cudaHostAllocDefault);
     if (err != cudaSuccess) {
-        fprintf(stderr, "Failed to allocate device memory (error code %s)\n", 
+        fprintf(stderr, "Failed to allocate pinned host memory (error code %s)\n", 
                 cudaGetErrorString(err));
-        free(host_img);
         exit(EXIT_FAILURE);
     }
 
-    // Calculate the number of threads and blocks
-    int threadsPerBlock = THREADS_PER_BLOCK;
-    int blocksPerGrid = (resX * resY + threadsPerBlock - 1) / threadsPerBlock;
+    // Allocate pitched device memory using cudaMallocPitch
+    int* dev_img;
+    size_t pitch;
+    err = cudaMallocPitch((void**)&dev_img, &pitch, resX * sizeof(int), resY);
+    if (err != cudaSuccess) {
+        fprintf(stderr, "Failed to allocate pitched device memory (error code %s)\n", 
+                cudaGetErrorString(err));
+        cudaFreeHost(host_img);
+        exit(EXIT_FAILURE);
+    }
 
     // Launch the kernel
-    mandelKernel<<<blocksPerGrid, threadsPerBlock>>>(lowerX, lowerY, stepX, stepY, 
-                                                     maxIterations, dev_img, resX, resY);
+    mandelKernel<<<blocksPerGrid, threadsPerBlockLocal>>>(lowerX, lowerY, stepX, stepY, 
+                                                         maxIterations, dev_img, pitch, resX, resY);
 
     // Check for any errors during kernel launch
     err = cudaGetLastError();
@@ -81,17 +89,27 @@ void hostFE(float upperX, float upperY, float lowerX, float lowerY,
         fprintf(stderr, "Failed to launch mandelKernel (error code %s)\n", 
                 cudaGetErrorString(err));
         cudaFree(dev_img);
-        free(host_img);
+        cudaFreeHost(host_img);
         exit(EXIT_FAILURE);
     }
 
-    // Copy the computed image data from device to host
-    err = cudaMemcpy(host_img, dev_img, size, cudaMemcpyDeviceToHost);
+    // Synchronize to ensure kernel completion
+    err = cudaDeviceSynchronize();
+    if (err != cudaSuccess) {
+        fprintf(stderr, "cudaDeviceSynchronize returned error code %s after launching kernel!\n", 
+                cudaGetErrorString(err));
+        cudaFree(dev_img);
+        cudaFreeHost(host_img);
+        exit(EXIT_FAILURE);
+    }
+
+    // Copy the computed image data from device to host using cudaMemcpy2D
+    err = cudaMemcpy2D(host_img, resX * sizeof(int), dev_img, pitch, resX * sizeof(int), resY, cudaMemcpyDeviceToHost);
     if (err != cudaSuccess) {
         fprintf(stderr, "Failed to copy image from device to host (error code %s)\n", 
                 cudaGetErrorString(err));
         cudaFree(dev_img);
-        free(host_img);
+        cudaFreeHost(host_img);
         exit(EXIT_FAILURE);
     }
 
@@ -103,5 +121,5 @@ void hostFE(float upperX, float upperY, float lowerX, float lowerY,
 
     // Free device and host memory
     cudaFree(dev_img);
-    free(host_img);
+    cudaFreeHost(host_img);
 }
