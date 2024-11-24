@@ -1,8 +1,8 @@
 #include <cuda.h>
 #include <stdio.h>
 #include <stdlib.h>
-#define THREADS_PER_BLOCK 128
-#define GROUP_SIZE 8
+#define THREADS_PER_BLOCK 256
+#define GROUP_SIZE 2
 
 __device__ int mandel(float c_re, float c_im, int maxIterations) {
     float z_re = c_re, z_im = c_im;
