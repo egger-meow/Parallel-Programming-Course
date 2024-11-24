@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #define THREADS_PER_BLOCK 128
-#define THREADS_PER_BLOCK 256
 
 // Define the group size: number of pixels each thread will process
 #define GROUP_SIZE 8  // You can experiment with different group sizes for optimal performance
@@ -32,8 +31,6 @@ __global__ void mandelKernel(float lowerX, float lowerY, float stepX, float step
     // Calculate the global thread index
     int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
 
-    // Calculate the total number of threads
-    int totalThreads = gridDim.x * blockDim.x;
 
     // Each thread processes GROUP_SIZE pixels
     for (int group = 0; group < GROUP_SIZE; ++group) {
