@@ -47,7 +47,7 @@ void hostFE (float upperX, float upperY, float lowerX, float lowerY, int* img, i
     float stepY = (upperY - lowerY) / resY;
 
     int threadsPerBlockLocal = THREADS_PER_BLOCK;
-    int blocksPerGrid = (resX * resY + threadsPerBlock - 1) / threadsPerBlock;
+    int blocksPerGrid = (resX * resY + threadsPerBlockLocal - 1) / threadsPerBlockLocal;
 
     int* hostImg;
     cudaHostAlloc((void**)&hostImg, resX * resY * sizeof(int), cudaHostAllocDefault);
