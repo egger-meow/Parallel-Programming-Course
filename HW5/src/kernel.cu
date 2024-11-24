@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #define THREADS_PER_BLOCK 256
+#define GROUP_SIZE 4
 
 __device__ int mandel(float c_re, float c_im, int maxIterations) {
     float z_re = c_re, z_im = c_im;
@@ -22,13 +23,20 @@ __device__ int mandel(float c_re, float c_im, int maxIterations) {
 __global__ void mandelKernel(float lowerX, float lowerY, float stepX, float stepY, 
                              int maxIterations, int* img, size_t pitch, int resX, int resY) {
     // Calculate the global thread index
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
 
-    // Calculate total number of pixels
-    int totalPixels = resX * resY;
+    // Calculate the total number of threads
+    int totalThreads = gridDim.x * blockDim.x;
 
-    // Ensure the thread ID is within the bounds of the image
-    if (idx < totalPixels) {
+    // Each thread processes GROUP_SIZE pixels
+    for (int group = 0; group < GROUP_SIZE; ++group) {
+        // Calculate the global pixel index
+        int idx = thread_id * GROUP_SIZE + group;
+
+        // Ensure the pixel index is within the bounds of the image
+        if (idx >= resX * resY)
+            continue;
+
         int x = idx % resX;      // Column index
         int y = idx / resX;      // Row index
 
@@ -57,7 +65,7 @@ void hostFE(float upperX, float upperY, float lowerX, float lowerY,
 
     // Define block and grid sizes
     int threadsPerBlockLocal = THREADS_PER_BLOCK;
-    int blocksPerGrid = (totalPixels + threadsPerBlockLocal - 1) / threadsPerBlockLocal;
+    int blocksPerGrid = (totalPixels + (threadsPerBlockLocal * GROUP_SIZE) - 1) / (threadsPerBlockLocal * GROUP_SIZE);
 
     // Allocate pinned host memory using cudaHostAlloc
     int* host_img;
