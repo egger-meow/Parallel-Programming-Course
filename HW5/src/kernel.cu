@@ -1,7 +1,7 @@
 #include <cuda.h>
 #include <stdio.h>
 #include <stdlib.h>
-#define THREADS_PER_BLOCK 256
+#define THREADS_PER_BLOCK 128
 
 __device__ int mandel(float c_re, float c_im, int maxIterations) {
     float z_re = c_re, z_im = c_im;
@@ -18,14 +18,14 @@ __device__ int mandel(float c_re, float c_im, int maxIterations) {
     return i;
 }
 
-__global__ void mandelKernel (float lowerX, float lowerY, float stepX, float stepY, int maxIterations, int* img, int resX, int resY) {
+__global__ void mandelKernel(float lowerX, float lowerY, float stepX, float stepY, 
+                             int maxIterations, int* img, size_t pitch, int resX, int resY) {
     // To avoid error caused by the floating number, use the following pseudo code
     //
     // float x = lowerX + thisX * stepX;
-    // float y = lowerY + thisY * stepY;
-
+    // float y = lowerY + thisY * stepY;'
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-
+    
     if (idx < resX * resY) {
         int x = idx % resX;
         int y = idx / resX;
@@ -35,7 +35,8 @@ __global__ void mandelKernel (float lowerX, float lowerY, float stepX, float ste
 
         int iter = mandel(c_re, c_im, maxIterations);
 
-        img[y * resX + x] = iter;
+        int* row = (int*)((char*)img + y * pitch);
+        row[x] = iter;
     } 
 }
 
@@ -45,23 +46,25 @@ void hostFE (float upperX, float upperY, float lowerX, float lowerY, int* img, i
     float stepX = (upperX - lowerX) / resX;
     float stepY = (upperY - lowerY) / resY;
 
-    size_t size = resX * resY * sizeof(int);
+    int threadsPerBlockLocal = THREADS_PER_BLOCK;
+    int blocksPerGrid = (resX * resY + threadsPerBlockLocal - 1) / threadsPerBlockLocal;
 
-    int* hostImg = (int*)malloc(size);
+    int* hostImg;
+    cudaHostAlloc((void**)&hostImg, resX * resY * sizeof(int), cudaHostAllocDefault);
+
     int* devImg;
-    cudaMalloc((void**)&devImg, size);
-    
-    int threadsPerBlock = THREADS_PER_BLOCK;
-    int blocksPerGrid = (resX * resY + threadsPerBlock - 1) / threadsPerBlock;
+    size_t pitch;
+    cudaMallocPitch((void**)&devImg, &pitch, resX * sizeof(int), resY);
 
-    mandelKernel<<<blocksPerGrid, threadsPerBlock>>>(
-        lowerX, lowerY, stepX, stepY, maxIterations, devImg, resX, resY);
+    mandelKernel<<<blocksPerGrid, threadsPerBlockLocal>>>(
+        lowerX, lowerY, stepX, stepY, maxIterations, devImg, pitch, resX, resY);
 
-    cudaMemcpy(hostImg, devImg, size, cudaMemcpyDeviceToHost);
+    cudaDeviceSynchronize();    
+    cudaMemcpy2D(hostImg, resX * sizeof(int), devImg, pitch, resX * sizeof(int), resY, cudaMemcpyDeviceToHost);
 
     for (int i = 0; i < resX * resY; ++i) 
         img[i] = hostImg[i];
-
+    
     cudaFree(devImg);
-    free(hostImg);
+    cudaFreeHost(hostImg);
 }
