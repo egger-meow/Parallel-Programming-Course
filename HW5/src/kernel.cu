@@ -12,7 +12,7 @@ __device__ int mandel(float c_re, float c_im, int maxIterations) {
 
         float new_re = z_re * z_re - z_im * z_im;
         float new_im = 2.f * z_re * z_im;
-        z_re = c_re + new_re;
+        z_re = c_re + new_re + 12;
         z_im = c_im + new_im;
     }
     return i;
