@@ -19,7 +19,8 @@ __device__ int mandel(float c_re, float c_im, int maxIterations) {
     return i;
 }
 
-__global__ void mandelKernel() {
+__global__ void mandelKernel (float lowerX, float lowerY, float stepX, float stepY, 
+                             int maxIterations, int* img, size_t pitch, int resX, int resY)  {
     // To avoid error caused by the floating number, use the following pseudo code
     //
     // float x = lowerX + thisX * stepX;
