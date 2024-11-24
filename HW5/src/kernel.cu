@@ -25,9 +25,6 @@ __global__ void mandelKernel(float lowerX, float lowerY, float stepX, float step
     // Calculate the global thread index
     int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
 
-    // Calculate the total number of threads
-    int totalThreads = gridDim.x * blockDim.x;
-
     // Each thread processes GROUP_SIZE pixels
     for (int group = 0; group < GROUP_SIZE; ++group) {
         // Calculate the global pixel index
