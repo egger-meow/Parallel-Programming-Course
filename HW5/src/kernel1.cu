@@ -46,9 +46,10 @@ void hostFE (float upperX, float upperY, float lowerX, float lowerY, int* img, i
 
     size_t size = resX * resY * sizeof(int);
 
-    int* devImg = (int*)malloc(size);
+    int* hostImg = (int*)malloc(size);
     int* devImg;
-
+    cudaMalloc((void**)&devImg, size);
+    
     int threadsPerBlock = THREADS_PER_BLOCK;
     int blocksPerGrid = (resX * resY + threadsPerBlock - 1) / threadsPerBlock;
 
