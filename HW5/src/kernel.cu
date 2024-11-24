@@ -57,6 +57,8 @@ void hostFE (float upperX, float upperY, float lowerX, float lowerY, int* img, i
     mandelKernel<<<blocksPerGrid, threadsPerBlock>>>(
         lowerX, lowerY, stepX, stepY, maxIterations, devImg, resX, resY);
 
+    cudaMemcpy(hostImg, devImg, size, cudaMemcpyDeviceToHost);
+    
     for (int i = 0; i < resX * resY; ++i) 
         img[i] = hostImg[i];
 
