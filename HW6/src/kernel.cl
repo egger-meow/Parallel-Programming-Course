@@ -1,3 +1,4 @@
+// kernel.cl
 
 __kernel void convolution(
     __global const float* inputImage,
