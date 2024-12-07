@@ -18,7 +18,10 @@ void hostFE(int filterWidth, float *filter, int imageHeight, int imageWidth,
     cl_uint ret_num_platforms;
     status = clGetPlatformIDs(1, &platform_id, &ret_num_platforms);
     if (status != CL_SUCCESS) {
-        // exit(1);
+        
+    fprintf(stderr, "OpenCL error %d: Failed to get platform IDs\n", status);
+    return;
+;
     }
 
     // Select device (GPU)
@@ -26,20 +29,29 @@ void hostFE(int filterWidth, float *filter, int imageHeight, int imageWidth,
     cl_uint ret_num_devices;
     status = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_GPU, 1, &device_id, &ret_num_devices);
     if (status != CL_SUCCESS) {
-        // exit(1);
+        
+    fprintf(stderr, "OpenCL error %d: Failed to get platform IDs\n", status);
+    return;
+;
     }
 
     // Create context
     cl_context context_local = clCreateContext(NULL, 1, &device_id, NULL, NULL, &status);
     if (status != CL_SUCCESS) {
-        // exit(1);
+        
+    fprintf(stderr, "OpenCL error %d: Failed to get platform IDs\n", status);
+    return;
+;
     }
 
     // Create command queue
     cl_command_queue command_queue = clCreateCommandQueue(context_local, device_id, 0, &status);
     if (status != CL_SUCCESS) {
         clReleaseContext(context_local);
-        // exit(1);
+        
+    fprintf(stderr, "OpenCL error %d: Failed to get platform IDs\n", status);
+    return;
+;
     }
 
     // Create buffers
@@ -48,7 +60,10 @@ void hostFE(int filterWidth, float *filter, int imageHeight, int imageWidth,
     if (status != CL_SUCCESS) {
         clReleaseCommandQueue(command_queue);
         clReleaseContext(context_local);
-        // exit(1);
+        
+    fprintf(stderr, "OpenCL error %d: Failed to get platform IDs\n", status);
+    return;
+;
     }
 
     cl_mem filter_mem = clCreateBuffer(context_local, CL_MEM_READ_ONLY,
@@ -57,7 +72,10 @@ void hostFE(int filterWidth, float *filter, int imageHeight, int imageWidth,
         clReleaseMemObject(input_mem);
         clReleaseCommandQueue(command_queue);
         clReleaseContext(context_local);
-        // exit(1);
+        
+    fprintf(stderr, "OpenCL error %d: Failed to get platform IDs\n", status);
+    return;
+;
     }
 
     cl_mem output_mem = clCreateBuffer(context_local, CL_MEM_WRITE_ONLY,
@@ -67,7 +85,10 @@ void hostFE(int filterWidth, float *filter, int imageHeight, int imageWidth,
         clReleaseMemObject(input_mem);
         clReleaseCommandQueue(command_queue);
         clReleaseContext(context_local);
-        // exit(1);
+        
+    fprintf(stderr, "OpenCL error %d: Failed to get platform IDs\n", status);
+    return;
+;
     }
 
     // Write data to buffers
@@ -79,7 +100,10 @@ void hostFE(int filterWidth, float *filter, int imageHeight, int imageWidth,
         clReleaseMemObject(input_mem);
         clReleaseCommandQueue(command_queue);
         clReleaseContext(context_local);
-        // exit(1);
+        
+    fprintf(stderr, "OpenCL error %d: Failed to get platform IDs\n", status);
+    return;
+;
     }
 
     status = clEnqueueWriteBuffer(command_queue, filter_mem, CL_TRUE, 0,
@@ -90,7 +114,10 @@ void hostFE(int filterWidth, float *filter, int imageHeight, int imageWidth,
         clReleaseMemObject(input_mem);
         clReleaseCommandQueue(command_queue);
         clReleaseContext(context_local);
-        // exit(1);
+        
+    fprintf(stderr, "OpenCL error %d: Failed to get platform IDs\n", status);
+    return;
+;
     }
 
     // Read kernel source
@@ -101,7 +128,10 @@ void hostFE(int filterWidth, float *filter, int imageHeight, int imageWidth,
         clReleaseMemObject(input_mem);
         clReleaseCommandQueue(command_queue);
         clReleaseContext(context_local);
-        // exit(1);
+        
+    fprintf(stderr, "OpenCL error %d: Failed to get platform IDs\n", status);
+    return;
+;
     }
 
     char *source_str = (char*)malloc(MAX_SOURCE_SIZE);
@@ -120,7 +150,10 @@ void hostFE(int filterWidth, float *filter, int imageHeight, int imageWidth,
         clReleaseMemObject(input_mem);
         clReleaseCommandQueue(command_queue);
         clReleaseContext(context_local);
-        // exit(1);
+        
+    fprintf(stderr, "OpenCL error %d: Failed to get platform IDs\n", status);
+    return;
+;
     }
 
     status = clBuildProgram(program_local, 1, &device_id, NULL, NULL, NULL);
@@ -131,7 +164,10 @@ void hostFE(int filterWidth, float *filter, int imageHeight, int imageWidth,
         clReleaseMemObject(input_mem);
         clReleaseCommandQueue(command_queue);
         clReleaseContext(context_local);
-        // exit(1);
+        
+    fprintf(stderr, "OpenCL error %d: Failed to get platform IDs\n", status);
+    return;
+;
     }
 
     // Create kernel
@@ -143,7 +179,10 @@ void hostFE(int filterWidth, float *filter, int imageHeight, int imageWidth,
         clReleaseMemObject(input_mem);
         clReleaseCommandQueue(command_queue);
         clReleaseContext(context_local);
-        // exit(1);
+        
+    fprintf(stderr, "OpenCL error %d: Failed to get platform IDs\n", status);
+    return;
+;
     }
 
     // Set kernel args
@@ -162,7 +201,10 @@ void hostFE(int filterWidth, float *filter, int imageHeight, int imageWidth,
         clReleaseMemObject(input_mem);
         clReleaseCommandQueue(command_queue);
         clReleaseContext(context_local);
-        // exit(1);
+        
+    fprintf(stderr, "OpenCL error %d: Failed to get platform IDs\n", status);
+    return;
+;
     }
 
     // Run kernel
@@ -178,7 +220,10 @@ void hostFE(int filterWidth, float *filter, int imageHeight, int imageWidth,
         clReleaseMemObject(input_mem);
         clReleaseCommandQueue(command_queue);
         clReleaseContext(context_local);
-        // exit(1);
+        
+    fprintf(stderr, "OpenCL error %d: Failed to get platform IDs\n", status);
+    return;
+;
     }
 
     // Finish queue
@@ -196,7 +241,10 @@ void hostFE(int filterWidth, float *filter, int imageHeight, int imageWidth,
         clReleaseMemObject(input_mem);
         clReleaseCommandQueue(command_queue);
         clReleaseContext(context_local);
-        // exit(1);
+        
+    fprintf(stderr, "OpenCL error %d: Failed to get platform IDs\n", status);
+    return;
+;
     }
 
     // Cleanup
