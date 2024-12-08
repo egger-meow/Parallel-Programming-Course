@@ -8,11 +8,20 @@ void hostFE(int filterWidth, float *filter, int imageHeight, int imageWidth,
 {
     cl_int status;
     
-    // Create command queue without profiling to keep it simple
+    // Create command queue
     cl_command_queue cmdQueue = clCreateCommandQueue(*context, *device, 0, &status);
     if (status != CL_SUCCESS) return;
 
-    // Create device buffers with simple flags
+    // Verify that 36x24 work group size is supported by the device
+    size_t maxWorkGroupSize;
+    status = clGetDeviceInfo(*device, CL_DEVICE_MAX_WORK_GROUP_SIZE, 
+                            sizeof(size_t), &maxWorkGroupSize, NULL);
+    if (status != CL_SUCCESS || maxWorkGroupSize < (36 * 24)) {
+        clReleaseCommandQueue(cmdQueue);
+        return;
+    }
+
+    // Create device buffers
     cl_mem d_input = clCreateBuffer(*context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
                                   sizeof(float) * imageWidth * imageHeight,
                                   inputImage, &status);
@@ -40,7 +49,7 @@ void hostFE(int filterWidth, float *filter, int imageHeight, int imageWidth,
         return;
     }
 
-    // Create and set up kernel
+    // Create and setup kernel
     cl_kernel kernel = clCreateKernel(*program, "convolution", &status);
     if (status != CL_SUCCESS) {
         clReleaseMemObject(d_output);
@@ -57,29 +66,9 @@ void hostFE(int filterWidth, float *filter, int imageHeight, int imageWidth,
     status |= clSetKernelArg(kernel, 3, sizeof(int), &imageWidth);
     status |= clSetKernelArg(kernel, 4, sizeof(int), &imageHeight);
     status |= clSetKernelArg(kernel, 5, sizeof(int), &filterWidth);
-    
-    if (status != CL_SUCCESS) {
-        clReleaseKernel(kernel);
-        clReleaseMemObject(d_output);
-        clReleaseMemObject(d_filter);
-        clReleaseMemObject(d_input);
-        clReleaseCommandQueue(cmdQueue);
-        return;
-    }
 
-    // Set work sizes
-    // Ensure work group size is compatible with the device
-    size_t maxWorkGroupSize;
-    clGetDeviceInfo(*device, CL_DEVICE_MAX_WORK_GROUP_SIZE, 
-                    sizeof(size_t), &maxWorkGroupSize, NULL);
-    
-    // Choose a reasonable work group size that's not too large
-    size_t localWS[2] = {16, 16};  // 16x16 = 256 threads, which should be safe
-    if (256 > maxWorkGroupSize) {
-        localWS[0] = 8;
-        localWS[1] = 8;  // Fallback to 8x8 = 64 threads
-    }
-    
+    // Set work sizes to 36x24
+    size_t localWS[2] = {36, 24};  // Specified work group size
     size_t globalWS[2] = {
         ((imageWidth + localWS[0] - 1) / localWS[0]) * localWS[0],
         ((imageHeight + localWS[1] - 1) / localWS[1]) * localWS[1]
@@ -88,19 +77,13 @@ void hostFE(int filterWidth, float *filter, int imageHeight, int imageWidth,
     // Launch kernel
     status = clEnqueueNDRangeKernel(cmdQueue, kernel, 2, NULL,
                                    globalWS, localWS, 0, NULL, NULL);
-    if (status != CL_SUCCESS) {
-        clReleaseKernel(kernel);
-        clReleaseMemObject(d_output);
-        clReleaseMemObject(d_filter);
-        clReleaseMemObject(d_input);
-        clReleaseCommandQueue(cmdQueue);
-        return;
-    }
 
-    // Read back results
-    status = clEnqueueReadBuffer(cmdQueue, d_output, CL_TRUE, 0,
-                                sizeof(float) * imageWidth * imageHeight,
-                                outputImage, 0, NULL, NULL);
+    // Read results back to host
+    if (status == CL_SUCCESS) {
+        status = clEnqueueReadBuffer(cmdQueue, d_output, CL_TRUE, 0,
+                                   sizeof(float) * imageWidth * imageHeight,
+                                   outputImage, 0, NULL, NULL);
+    }
 
     // Cleanup
     clReleaseKernel(kernel);
