@@ -67,14 +67,13 @@ void hostFE(int filterWidth, float *filter, int imageHeight, int imageWidth,
     clGetDeviceInfo(*device, CL_DEVICE_MAX_WORK_GROUP_SIZE, 
                     sizeof(size_t), &maxWorkGroupSize, NULL);
     
-    size_t localWS[2] = {36, 24};  // New work group size
-
-    // The fallback check should be updated since 36*24 = 864 threads
-    if (864 > maxWorkGroupSize) {
+    // Choose a reasonable work group size that's not too large
+    size_t localWS[2] = {16, 16};  // 16x16 = 256 threads, which should be safe
+    if (256 > maxWorkGroupSize) {
         localWS[0] = 8;
         localWS[1] = 8;  // Fallback to 8x8 = 64 threads
     }
-        
+    
     size_t globalWS[2] = {
         ((imageWidth + localWS[0] - 1) / localWS[0]) * localWS[0],
         ((imageHeight + localWS[1] - 1) / localWS[1]) * localWS[1]
