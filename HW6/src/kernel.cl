@@ -6,17 +6,14 @@ __kernel void convolution(
     const int height,
     const int filterWidth)
 {
-    // Get global ID
     const int x = get_global_id(0);
     const int y = get_global_id(1);
     
-    // Return if out of bounds
     if (x >= width || y >= height) return;
     
     const int halfFilter = filterWidth / 2;
     float sum = 0.0f;
 
-    // Loop unrolling for common filter sizes (7x7)
     #pragma unroll 4
     for (int i = -halfFilter; i <= halfFilter; i++) {
         #pragma unroll 4
@@ -24,7 +21,6 @@ __kernel void convolution(
             const int currentY = y + i;
             const int currentX = x + j;
             
-            // Check boundaries
             if (currentY >= 0 && currentY < height && 
                 currentX >= 0 && currentX < width) {
                 const int inputIdx = currentY * width + currentX;
@@ -34,6 +30,7 @@ __kernel void convolution(
         }
     }
     
-    // Write output
+
+    
     output[y * width + x] = sum;
 }

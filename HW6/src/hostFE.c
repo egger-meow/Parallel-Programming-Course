@@ -10,11 +10,9 @@ void hostFE(int filterWidth, float *filter, int imageHeight, int imageWidth,
     cl_int status;
     int filterSize = filterWidth * filterWidth;
     
-    // Create command queue
     cl_command_queue cmdQueue = clCreateCommandQueue(*context, *device, 0, &status);
     if (status != CL_SUCCESS) return;
 
-    // Create memory buffers
     cl_mem inputBuffer = clCreateBuffer(*context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
                                       sizeof(float) * imageWidth * imageHeight,
                                       inputImage, &status);
@@ -42,7 +40,6 @@ void hostFE(int filterWidth, float *filter, int imageHeight, int imageWidth,
         return;
     }
 
-    // Create the kernel
     cl_kernel kernel = clCreateKernel(*program, "convolution", &status);
     if (status != CL_SUCCESS) {
         clReleaseMemObject(outputBuffer);
@@ -52,7 +49,6 @@ void hostFE(int filterWidth, float *filter, int imageHeight, int imageWidth,
         return;
     }
 
-    // Set kernel arguments
     status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &inputBuffer);
     status |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &filterBuffer);
     status |= clSetKernelArg(kernel, 2, sizeof(cl_mem), &outputBuffer);
@@ -60,14 +56,12 @@ void hostFE(int filterWidth, float *filter, int imageHeight, int imageWidth,
     status |= clSetKernelArg(kernel, 4, sizeof(int), &imageHeight);
     status |= clSetKernelArg(kernel, 5, sizeof(int), &filterWidth);
 
-    // Set work-item dimensions
     size_t localWS[2] = {16, 16};  // Work-group size
     size_t globalWS[2] = {
         ((imageWidth + localWS[0] - 1) / localWS[0]) * localWS[0],
         ((imageHeight + localWS[1] - 1) / localWS[1]) * localWS[1]
     };
 
-    // Execute kernel
     status = clEnqueueNDRangeKernel(cmdQueue, kernel, 2, NULL,
                                    globalWS, localWS, 0, NULL, NULL);
     if (status != CL_SUCCESS) {
@@ -79,12 +73,10 @@ void hostFE(int filterWidth, float *filter, int imageHeight, int imageWidth,
         return;
     }
 
-    // Read back results
     status = clEnqueueReadBuffer(cmdQueue, outputBuffer, CL_TRUE, 0,
                                 sizeof(float) * imageWidth * imageHeight,
                                 outputImage, 0, NULL, NULL);
 
-    // Cleanup
     clReleaseKernel(kernel);
     clReleaseMemObject(outputBuffer);
     clReleaseMemObject(filterBuffer);
