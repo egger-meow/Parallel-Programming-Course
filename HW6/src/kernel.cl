@@ -20,13 +20,15 @@ __kernel void convolution(
     // Calculate filter dimensions
     const int halfFilter = filterWidth / 2;
     
-    // Calculate local memory size needed for the tile plus halo regions
-    // Using dynamic local memory allocation instead of fixed size
-    __local float localInput[32][32];  // Maximum size to accommodate work group and halo
+    // Update local memory size to accommodate 36x24 work group plus halo regions
+    // If halfFilter is 1, we need 38x26 size (36+2 x 24+2)
+    // If halfFilter is 2, we need 40x28 size (36+4 x 24+4)
+    // Let's make it slightly larger to be safe
+    __local float localInput[44][56];  // Accommodates work group of 36x24 plus generous halo
     
     // Load tile and halo region into local memory
-    const int blockDimX = get_local_size(0);
-    const int blockDimY = get_local_size(1);
+    const int blockDimX = get_local_size(0);  // Will be 36
+    const int blockDimY = get_local_size(1);  // Will be 24
     const int tile_start_x = get_group_id(0) * blockDimX - halfFilter;
     const int tile_start_y = get_group_id(1) * blockDimY - halfFilter;
     
@@ -43,7 +45,7 @@ __kernel void convolution(
             }
             
             // Ensure we don't write outside local memory bounds
-            if (dy < 32 && dx < 32) {
+            if (dy < 44 && dx < 56) {  // Updated bounds check
                 localInput[dy][dx] = value;
             }
         }
@@ -59,8 +61,8 @@ __kernel void convolution(
     const int local_mem_x = local_x + halfFilter;
     const int local_mem_y = local_y + halfFilter;
     
-    // Only proceed if we're within valid local memory bounds
-    if (local_mem_x < 32 - halfFilter && local_mem_y < 32 - halfFilter) {
+    // Update bounds check for new local memory size
+    if (local_mem_x < 56 - halfFilter && local_mem_y < 44 - halfFilter) {
         for (int i = -halfFilter; i <= halfFilter; i++) {
             for (int j = -halfFilter; j <= halfFilter; j++) {
                 int filterIndex = (i + halfFilter) * filterWidth + (j + halfFilter);
